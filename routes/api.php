@@ -12,6 +12,7 @@ Route::prefix('audit/categories')->group(function () {
     Route::get('/', [AuditCategoryController::class, 'index']);
     Route::get('/{id}', [AuditCategoryController::class, 'show']);
     Route::post('/', [AuditCategoryController::class, 'store']);
-    Route::put('/{id}', [AuditCategoryController::class, 'update']);
-    Route::delete('/{id}', [AuditCategoryController::class, 'destroy']);
+
+    Route::post('/{id}/update', [AuditCategoryController::class, 'update']);
+    Route::post('/{id}/delete', [AuditCategoryController::class, 'destroy']);
 });
