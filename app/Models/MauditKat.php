@@ -24,4 +24,11 @@ class MauditKat extends Model
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+
+    //Daftar pertanyaan dalam kategori
+    public function questions()
+    {
+        return $this->hasMany(MauditQuest::class, 'nid_kat', 'nid');
+    }
 }
