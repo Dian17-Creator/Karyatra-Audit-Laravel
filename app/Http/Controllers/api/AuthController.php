@@ -30,6 +30,13 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if (!$user->faudit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses.'
+            ], 403);
+        }
+
         // Password salah
         if (!Hash::check($request->password, $user->cpassword)) {
             return response()->json([
