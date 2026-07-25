@@ -72,6 +72,11 @@ class AuditCategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        Log::info('UPDATE MASUK', [
+            'id' => $id,
+            'data' => $request->all(),
+        ]);
+
         $category = MauditKat::find($id);
 
         if (!$category) {
@@ -114,6 +119,10 @@ class AuditCategoryController extends Controller
      */
     public function destroy($id)
     {
+        Log::info('DELETE MASUK', [
+            'id' => $id,
+        ]);
+
         $category = MauditKat::withCount('questions')->find($id);
 
         if (!$category) {
