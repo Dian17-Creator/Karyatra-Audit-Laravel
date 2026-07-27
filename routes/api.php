@@ -4,8 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\AuditCategoryController;
 use App\Http\Controllers\AuditQuestionController;
+use App\Http\Controllers\DashboardController;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+//dashboard controller
+Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
 // Audit Category Api
 Route::prefix('audit/categories')->group(function () {
