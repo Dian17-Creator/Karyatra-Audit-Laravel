@@ -20,6 +20,6 @@ Route::prefix('audit/categories')->group(function () {
 //Audir Question Api
 Route::get('/audit/categories/{categoryId}/questions', [AuditQuestionController::class, 'index']);
 Route::post('/audit/questions', [AuditQuestionController::class, 'store']);
+Route::post('/audit/questions/reorder', [AuditQuestionController::class, 'reorder']);
 Route::post('/audit/questions/{id}', [AuditQuestionController::class, 'update']);
 Route::post('/audit/questions/{id}/delete', [AuditQuestionController::class, 'destroy']);
-Route::post('/audit/questions/reorder', [AuditQuestionController::class, 'reorder']);
