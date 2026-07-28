@@ -57,4 +57,12 @@ class MauditAudit extends Model
     {
         return $this->belongsTo(muser::class, 'nid_auditor', 'nid');
     }
+
+    /**
+     * Responses dari Audit
+     */
+    public function responses()
+    {
+        return $this->hasMany(MauditResponses::class, 'nid_audit', 'nid');
+    }
 }

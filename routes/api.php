@@ -32,3 +32,15 @@ Route::post('/audit/questions/{id}/delete', [AuditQuestionController::class, 'de
 Route::get('/audit/departments', [\App\Http\Controllers\AuditDepartmentController::class, 'index']);
 Route::get('/audit/departments/{id}/mapping', [\App\Http\Controllers\AuditDepartmentController::class, 'mapping']);
 Route::post('/audit/departments/mapping', [\App\Http\Controllers\AuditDepartmentController::class, 'storeMapping']);
+
+// Audit Reports / Execution API
+Route::prefix('audits')->group(function () {
+    Route::get('/', [\App\Http\Controllers\AuditReportController::class, 'index']);
+    Route::get('/detail', [\App\Http\Controllers\AuditReportController::class, 'show']);
+    Route::post('/create', [\App\Http\Controllers\AuditReportController::class, 'store']);
+    Route::post('/update', [\App\Http\Controllers\AuditReportController::class, 'updateAnswers']);
+    Route::post('/upload-photo', [\App\Http\Controllers\AuditReportController::class, 'uploadPhoto']);
+    Route::post('/delete-photo', [\App\Http\Controllers\AuditReportController::class, 'deletePhoto']);
+    Route::post('/submit', [\App\Http\Controllers\AuditReportController::class, 'submit']);
+    Route::post('/delete', [\App\Http\Controllers\AuditReportController::class, 'destroy']);
+});
