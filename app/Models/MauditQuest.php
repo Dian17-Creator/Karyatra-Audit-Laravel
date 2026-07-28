@@ -45,4 +45,12 @@ class MauditQuest extends Model
     {
         return $query->where('factive', 1);
     }
+
+    /**
+     * Responses yang menggunakan pertanyaan ini
+     */
+    public function responses()
+    {
+        return $this->hasMany(MauditResponses::class, 'nid_quest', 'nid');
+    }
 }
