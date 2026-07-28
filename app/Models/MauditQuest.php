@@ -53,4 +53,12 @@ class MauditQuest extends Model
     {
         return $this->hasMany(MauditResponses::class, 'nid_quest', 'nid');
     }
+
+    /**
+     * Department yang di-mapping dengan pertanyaan ini
+     */
+    public function departments()
+    {
+        return $this->belongsToMany(mdepartment::class, 'maudit_deptquest', 'nid_quest', 'nid_dept');
+    }
 }

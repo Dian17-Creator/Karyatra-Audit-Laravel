@@ -27,3 +27,8 @@ Route::post('/audit/questions', [AuditQuestionController::class, 'store']);
 Route::post('/audit/questions/reorder', [AuditQuestionController::class, 'reorder']);
 Route::post('/audit/questions/{id}', [AuditQuestionController::class, 'update']);
 Route::post('/audit/questions/{id}/delete', [AuditQuestionController::class, 'destroy']);
+
+// Audit Department Api
+Route::get('/audit/departments', [\App\Http\Controllers\AuditDepartmentController::class, 'index']);
+Route::get('/audit/departments/{id}/mapping', [\App\Http\Controllers\AuditDepartmentController::class, 'mapping']);
+Route::post('/audit/departments/mapping', [\App\Http\Controllers\AuditDepartmentController::class, 'storeMapping']);
