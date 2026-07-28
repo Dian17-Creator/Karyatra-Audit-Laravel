@@ -132,6 +132,13 @@ class AuditQuestionController extends Controller
             ], 404);
         }
 
+        if ($question->responses()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pertanyaan tidak dapat diubah karena sudah digunakan dalam audit.'
+            ], 409);
+        }
+
         $question->cquest = $request->question;
         $question->save();
 
@@ -171,6 +178,13 @@ class AuditQuestionController extends Controller
                 'success' => false,
                 'message' => 'Pertanyaan tidak ditemukan.',
             ], 404);
+        }
+
+        if ($question->responses()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pertanyaan tidak dapat dihapus karena sudah digunakan dalam audit.'
+            ], 409);
         }
 
         DB::beginTransaction();
@@ -247,6 +261,17 @@ class AuditQuestionController extends Controller
                 'success' => false,
                 'message' => 'Beberapa pertanyaan tidak termasuk dalam kategori yang dipilih.',
             ], 422);
+        }
+
+        $hasUsedQuestion = MauditQuest::whereIn('nid', $request->question_ids)
+            ->has('responses')
+            ->exists();
+
+        if ($hasUsedQuestion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Urutan pertanyaan tidak dapat diubah karena terdapat pertanyaan yang sudah digunakan dalam audit.'
+            ], 409);
         }
 
         DB::beginTransaction();
