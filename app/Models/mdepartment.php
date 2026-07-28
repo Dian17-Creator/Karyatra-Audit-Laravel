@@ -48,4 +48,12 @@ class mdepartment extends Model
     {
         return $this->hasMany(MauditAudit::class, 'nid_dept', 'nid');
     }
+
+    /**
+     * Pertanyaan audit yang di-mapping ke department ini
+     */
+    public function auditQuestions()
+    {
+        return $this->belongsToMany(MauditQuest::class, 'maudit_deptquest', 'nid_dept', 'nid_quest');
+    }
 }
