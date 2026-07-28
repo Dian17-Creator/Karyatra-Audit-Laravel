@@ -52,7 +52,7 @@ class AuditDepartmentController extends Controller
         $linkedQuestionIds = $department->auditQuestions()->pluck('maudit_quest.nid')->toArray();
 
         // Get all categories ordered by name
-        $categories = MauditKat::orderBy('ckategori')->get();
+        $categories = MauditKat::orderBy('cnama')->get();
 
         // Get all active questions ordered by sequence
         $questions = MauditQuest::active()->orderBy('nsequence')->get();
@@ -62,8 +62,8 @@ class AuditDepartmentController extends Controller
 
         foreach ($categories as $category) {
             $catQuestions = $groupedQuestions->get($category->nid, collect());
-            
-            $formattedQuestions = $catQuestions->map(function($q) use ($linkedQuestionIds) {
+
+            $formattedQuestions = $catQuestions->map(function ($q) use ($linkedQuestionIds) {
                 return [
                     'id'       => $q->nid,
                     'question' => $q->cquest,
@@ -73,7 +73,7 @@ class AuditDepartmentController extends Controller
 
             $formattedCategories[] = [
                 'id'        => $category->nid,
-                'name'      => $category->ckategori,
+                'name'      => $category->cnama,
                 'questions' => $formattedQuestions,
             ];
         }
