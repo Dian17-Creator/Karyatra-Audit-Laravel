@@ -18,6 +18,20 @@ class DashboardController extends Controller
 
         $totalAudit = MauditAudit::count();
 
+        $recentAudits = MauditAudit::with('department')
+            ->orderBy('started_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentActivity = $recentAudits->map(function ($audit) {
+            return [
+                'id' => $audit->nid,
+                'title' => 'Audit ' . ($audit->department->cname ?? 'Departemen'),
+                'subtitle' => $audit->cdocid . ' • ' . ($audit->daudit ? $audit->daudit->format('d M Y') : '-'),
+                'status' => $audit->cstatus
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Dashboard summary berhasil diambil.',
@@ -25,6 +39,7 @@ class DashboardController extends Controller
                 'total_kategori'   => $totalKategori,
                 'total_pertanyaan' => $totalPertanyaan,
                 'total_audit'      => $totalAudit,
+                'recent_activity'  => $recentActivity
             ]
         ]);
     }
