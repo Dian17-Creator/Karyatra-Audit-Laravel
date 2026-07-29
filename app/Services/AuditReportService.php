@@ -23,7 +23,7 @@ class AuditReportService
             ->whereBetween('daudit', [$dateFrom, $dateTo])
             ->orderBy('daudit', 'desc')
             ->orderBy('cdocid', 'desc')
-            ->paginate($perPage);
+            ->get();
     }
 
     /**
@@ -89,8 +89,8 @@ class AuditReportService
 
         // Calculate percentage for each category
         foreach ($categoriesMap as &$cat) {
-            $cat['percentage'] = $cat['max_score'] > 0 
-                ? round(($cat['total_score'] / $cat['max_score']) * 100, 2) 
+            $cat['percentage'] = $cat['max_score'] > 0
+                ? round(($cat['total_score'] / $cat['max_score']) * 100, 2)
                 : 0;
         }
 
@@ -151,7 +151,7 @@ class AuditReportService
             ]);
 
             // Create blank responses based on mapping
-            $questions = MauditQuest::whereHas('departments', function($q) use ($departmentId) {
+            $questions = MauditQuest::whereHas('departments', function ($q) use ($departmentId) {
                 $q->where('mdepartment.nid', $departmentId);
             })->get();
 
@@ -185,7 +185,7 @@ class AuditReportService
     {
         DB::transaction(function () use ($auditId, $answers) {
             $audit = MauditAudit::findOrFail($auditId);
-            
+
             if ($audit->cstatus === 'Submitted') {
                 throw new Exception("Audit sudah disubmit, tidak bisa diubah.");
             }
@@ -232,7 +232,7 @@ class AuditReportService
             // Hitung Score
             $totalScore = MauditResponses::where('nid_audit', $auditId)->sum('nnilai');
             $maxScore = MauditResponses::where('nid_audit', $auditId)->count() * 2;
-            
+
             $percentage = $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0;
 
             $audit->update([
@@ -262,12 +262,12 @@ class AuditReportService
             }
 
             // Ambil semua foto terkait
-            $photoPaths = MauditFoto::whereHas('response', function($q) use ($auditId) {
+            $photoPaths = MauditFoto::whereHas('response', function ($q) use ($auditId) {
                 $q->where('nid_audit', $auditId);
             })->pluck('cphoto_path')->toArray();
 
             // Hapus tabel secara berurutan
-            MauditFoto::whereHas('response', function($q) use ($auditId) {
+            MauditFoto::whereHas('response', function ($q) use ($auditId) {
                 $q->where('nid_audit', $auditId);
             })->delete();
 
