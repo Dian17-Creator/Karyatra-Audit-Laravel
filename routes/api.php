@@ -40,6 +40,7 @@ Route::prefix('audits')->group(function () {
     Route::post('/create', [\App\Http\Controllers\AuditReportController::class, 'store']);
     Route::post('/update', [\App\Http\Controllers\AuditReportController::class, 'updateAnswers']);
     Route::post('/upload-photo', [\App\Http\Controllers\AuditReportController::class, 'uploadPhoto']);
+    Route::post('/update-photo', [\App\Http\Controllers\AuditReportController::class, 'updatePhoto']);
     Route::post('/delete-photo', [\App\Http\Controllers\AuditReportController::class, 'deletePhoto']);
     Route::post('/submit', [\App\Http\Controllers\AuditReportController::class, 'submit']);
     Route::post('/delete', [\App\Http\Controllers\AuditReportController::class, 'destroy']);

@@ -9,6 +9,7 @@ use App\Http\Requests\AuditDetailRequest;
 use App\Http\Requests\AuditListRequest;
 use App\Http\Requests\AuditSubmitRequest;
 use App\Http\Requests\AuditUpdateAnswersRequest;
+use App\Http\Requests\AuditUpdatePhotoRequest;
 use App\Http\Requests\AuditUploadPhotoRequest;
 use App\Models\MauditAudit;
 use App\Models\MauditFoto;
@@ -152,8 +153,8 @@ class AuditReportController extends Controller
             $photo->move($uploadDir, $filename);
 
             $result = $this->auditService->submitAudit(
-                $request->audit_id, 
-                $request->auditee_name, 
+                $request->audit_id,
+                $request->auditee_name,
                 $relativePath
             );
 
@@ -180,7 +181,7 @@ class AuditReportController extends Controller
     {
         try {
             $responseId = $request->response_id;
-            
+
             return DB::transaction(function () use ($request, $responseId) {
                 $responseInfo = MauditResponses::with(['audit', 'question'])->findOrFail($responseId);
                 $audit = $responseInfo->audit;
@@ -236,6 +237,31 @@ class AuditReportController extends Controller
     }
 
     /**
+     * Update detail foto temuan (Hasil Pengamatan & Rekomendasi)
+     */
+    public function updatePhoto(AuditUpdatePhotoRequest $request)
+    {
+        try {
+            $photo = MauditFoto::findOrFail($request->id);
+
+            $photo->update([
+                'cket' => $request->observation,
+                'caction' => $request->recommendation
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail foto berhasil diperbarui.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui detail foto: ' . $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
      * Hapus foto temuan
      */
     public function deletePhoto(AuditDeletePhotoRequest $request)
@@ -243,7 +269,7 @@ class AuditReportController extends Controller
         try {
             return DB::transaction(function () use ($request) {
                 $photo = MauditFoto::with('response.audit')->findOrFail($request->photo_id);
-                
+
                 if ($photo->response->audit->cstatus === 'Submitted') {
                     throw new Exception("Audit telah di-submit, foto tidak bisa dihapus.");
                 }
