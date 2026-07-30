@@ -19,11 +19,24 @@ class AuditReportService
      */
     public function getList(int $departmentId, string $dateFrom, string $dateTo, int $perPage = 15)
     {
-        return MauditAudit::where('nid_dept', $departmentId)
+        $audits = MauditAudit::with('department')
+            ->where('nid_dept', $departmentId)
             ->whereBetween('daudit', [$dateFrom, $dateTo])
             ->orderBy('daudit', 'desc')
             ->orderBy('cdocid', 'desc')
             ->get();
+
+        return $audits->map(function ($audit) {
+            return [
+                'nid' => $audit->nid,
+                'cdocid' => $audit->cdocid,
+                'nid_dept' => $audit->nid_dept,
+                'department_name' => $audit->department->cname ?? '-',
+                'cstatus' => $audit->cstatus,
+                'daudit' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
+                'created_at' => $audit->started_at
+            ];
+        });
     }
 
     /**
