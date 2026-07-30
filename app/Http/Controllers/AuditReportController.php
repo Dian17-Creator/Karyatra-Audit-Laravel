@@ -85,8 +85,8 @@ class AuditReportController extends Controller
     public function store(AuditCreateRequest $request)
     {
         try {
-            // Asumsikan auth()->id() atau ambil dari user session. Di sini kita hardcode 1 untuk contoh jika tidak ada auth guard setup.
-            $auditorId = auth()->id() ?? 1;
+            // Priority: Request parameter > Auth ID > Default 1
+            $auditorId = $request->auditor_id ?? (auth()->id() ?? 1);
 
             $audit = $this->auditService->startAudit($request->department_id, $auditorId);
 
