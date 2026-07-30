@@ -14,7 +14,8 @@ class AuditCreateRequest extends FormRequest
     public function rules()
     {
         return [
-            'department_id' => 'required|integer|exists:mdepartment,nid'
+            'department_id' => 'required|integer|exists:mdepartment,nid',
+            'auditor_id' => 'nullable|integer|exists:muser,nid'
         ];
     }
 }
