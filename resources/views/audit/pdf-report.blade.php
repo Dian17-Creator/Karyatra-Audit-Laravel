@@ -101,33 +101,41 @@ break 2;
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 25px;
+            border: 1.5pt solid #e0e0e0;
+            border-left: 4pt solid #B63352;
+        }
+
+        .summary-table tr {
+            border-bottom: 1pt solid #ececec;
         }
 
         .summary-table td {
-            border: 1pt solid #ddd;
-            padding: 10pt;
+            border: none;
+            border-bottom: 1pt solid #ececec;
+            border-right: 1pt solid #ececec;
+            padding: 9pt 12pt;
             vertical-align: middle;
         }
 
         .summary-label {
-            width: 20%;
-            background-color: #f8f9fa;
+            width: 18%;
+            background-color: #fdf5f7;
             font-weight: bold;
-            color: #555;
+            color: #B63352;
             font-size: 7pt;
             text-transform: uppercase;
+            letter-spacing: 0.5pt;
         }
 
         .summary-value {
-            width: 30%;
+            width: 32%;
             font-weight: bold;
-            color: #222;
-            font-size: 8pt;
-            white-space: nowrap;
+            color: #1a1a1a;
+            font-size: 8.5pt;
         }
 
         .score-large {
-            font-size: 16pt;
+            font-size: 14pt;
             color: #B63352;
         }
 
