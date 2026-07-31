@@ -37,6 +37,7 @@ Route::post('/audit/departments/mapping', [\App\Http\Controllers\AuditDepartment
 Route::prefix('audits')->group(function () {
     Route::get('/', [\App\Http\Controllers\AuditReportController::class, 'index']);
     Route::get('/detail', [\App\Http\Controllers\AuditReportController::class, 'show']);
+    Route::get('/{id}/export-pdf', [\App\Http\Controllers\AuditReportController::class, 'exportPdf']);
     Route::post('/create', [\App\Http\Controllers\AuditReportController::class, 'store']);
     Route::post('/update', [\App\Http\Controllers\AuditReportController::class, 'updateAnswers']);
     Route::post('/upload-photo', [\App\Http\Controllers\AuditReportController::class, 'uploadPhoto']);
