@@ -122,9 +122,10 @@ break 2;
             background-color: #fdf5f7;
             font-weight: bold;
             color: #B63352;
-            font-size: 7pt;
+            font-size: 6.5pt;
             text-transform: uppercase;
-            letter-spacing: 0.5pt;
+            letter-spacing: 0.3pt;
+            white-space: nowrap;
         }
 
         .summary-value {
