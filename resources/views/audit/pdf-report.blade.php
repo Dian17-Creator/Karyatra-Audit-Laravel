@@ -105,23 +105,24 @@ break 2;
 
         .summary-table td {
             border: 1pt solid #ddd;
-            padding: 10pt;
+            padding: 5pt 8pt;
             vertical-align: middle;
         }
 
         .summary-label {
-            width: 20%;
             background-color: #f8f9fa;
             font-weight: bold;
             color: #555;
-            font-size: 9pt;
+            font-size: 7.5pt;
             text-transform: uppercase;
+            white-space: nowrap;
         }
 
         .summary-value {
-            width: 30%;
             font-weight: bold;
             color: #222;
+            font-size: 8.5pt;
+            white-space: nowrap;
         }
 
         .score-large {
@@ -148,6 +149,7 @@ break 2;
             border-collapse: collapse;
             margin-bottom: 20pt;
             page-break-inside: auto;
+            border: 1pt solid #ddd;
         }
 
         .category-row-header {
@@ -162,12 +164,13 @@ break 2;
         }
 
         .question-row {
-            border-bottom: 1pt solid #eee;
+            border-bottom: 1pt solid #ddd;
         }
 
         .question-row td {
             padding: 12pt;
             vertical-align: top;
+            border-left: 1pt solid #ddd;
         }
 
         .question-text-cell {
@@ -258,18 +261,22 @@ break 2;
         }
 
         .signature-img-container {
-            height: 220pt;
             border: 1.5pt solid #eee;
             background-color: #fcfcfc;
             margin: 12pt 0;
-            line-height: 220pt;
             border-radius: 8pt;
+            text-align: center;
+            padding: 8pt;
+            min-height: 40pt;
         }
 
         .signature-img {
-            max-width: 95%;
-            max-height: 210pt;
-            vertical-align: middle;
+            max-width: 100%;
+            max-height: 180pt;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 0 auto;
             border-radius: 4pt;
         }
 
@@ -353,14 +360,10 @@ break 2;
             <td class="summary-value">{{ $audit['department_name'] }}</td>
             <td class="summary-label">Auditor</td>
             <td class="summary-value">{{ $audit['auditor_name'] }}</td>
-        </tr>
-        <tr>
             <td class="summary-label">Tanggal Audit</td>
             <td class="summary-value">{{ \Carbon\Carbon::parse($audit['audit_date'])->translatedFormat('d F Y') }}</td>
             <td class="summary-label">Tanggal Selesai</td>
             <td class="summary-value">{{ $audit['submitted_at'] ? \Carbon\Carbon::parse($audit['submitted_at'])->translatedFormat('d F Y, H:i') : '-' }}</td>
-        </tr>
-        <tr>
             <td class="summary-label">Nilai Total</td>
             <td class="summary-value score-large">{{ number_format($audit['total_score'], 1) }} / {{ number_format($audit['max_score'], 1) }}</td>
             <td class="summary-label">Persentase</td>
@@ -370,7 +373,10 @@ break 2;
 
     <h2>Hasil Penilaian</h2>
 
-    @foreach($categories as $category)
+    @foreach($categories as $index => $category)
+    @if($index > 0)
+    <div style="page-break-before: always;"></div>
+    @endif
     <table class="category-table">
         <tr class="category-row-header">
             <td colspan="2">
@@ -380,10 +386,10 @@ break 2;
                 {{ $category['name'] }}
             </td>
         </tr>
-        @foreach($category['questions'] as $index => $question)
+        @foreach($category['questions'] as $qIndex => $question)
         <tr class="question-row">
             <td class="question-text-cell">
-                <div style="font-weight: bold; margin-bottom: 4pt;">{{ $index + 1 }}. {{ $question['question'] }}</div>
+                <div style="font-weight: bold; margin-bottom: 4pt;">{{ $qIndex + 1 }}. {{ $question['question'] }}</div>
                 @if(!empty($question['response']['remark']))
                 <div class="remark-box">
                     <div class="remark-label">Catatan / Temuan</div>
@@ -414,11 +420,12 @@ break 2;
     @endforeach
 
     <!-- SIGNATURE AREA -->
+    <div style="page-break-before: always;"></div>
     <table class="signature-table">
         <tr>
             <td>
                 <div class="signature-label">Auditor</div>
-                <div class="signature-img-container" style="border:none; background:none;"></div>
+                <div style="margin: 20pt 0 8pt 0; min-height: 60pt;"></div>
                 <div class="signature-name">{{ $audit['auditor_name'] }}</div>
             </td>
             <td>
@@ -427,13 +434,13 @@ break 2;
                     @if($audit['verification_photo'])
                     <img src="{{ getBase64Image($audit['verification_photo']) }}" class="signature-img">
                     @else
-                    <span style="color:#ccc; font-size: 9pt;">DOKUMEN BELUM DIVERIFIKASI</span>
+                    <span style="color:#ccc; font-size: 9pt; display: block; padding: 20pt 0;">DOKUMEN BELUM DIVERIFIKASI</span>
                     @endif
                 </div>
             </td>
             <td>
                 <div class="signature-label">Auditee / PIC</div>
-                <div class="signature-img-container" style="border:none; background:none;"></div>
+                <div style="margin: 20pt 0 8pt 0; min-height: 60pt;"></div>
                 <div class="signature-name">{{ $audit['auditee_name'] ?? '-' }}</div>
             </td>
         </tr>
