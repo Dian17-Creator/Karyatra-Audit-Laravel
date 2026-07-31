@@ -81,7 +81,9 @@ class AuditReportService
             $photos = $response->photos->map(function ($photo) {
                 return [
                     'id' => $photo->nid,
-                    'photo_path' => asset($photo->cphoto_path),
+                    // Gunakan public_path() bukan asset() agar DomPDF bisa baca file langsung dari disk
+                    // asset() menghasilkan URL HTTPS yang sering gagal di-fetch DomPDF karena isu SSL
+                    'photo_path' => $photo->cphoto_path ? public_path($photo->cphoto_path) : null,
                     'remark' => $photo->cket,
                     'action' => $photo->caction,
                 ];
@@ -118,7 +120,9 @@ class AuditReportService
                 'total_score' => (float) $audit->ntotnilai,
                 'max_score' => (float) $audit->nnilaimax,
                 'percentage' => (float) $audit->npersen,
-                'verification_photo' => $audit->cphoto_path ? asset($audit->cphoto_path) : null,
+                // Gunakan public_path() bukan asset() agar DomPDF bisa baca file langsung dari disk
+                // asset() menghasilkan URL HTTPS yang sering gagal di-fetch DomPDF karena isu SSL
+                'verification_photo' => $audit->cphoto_path ? public_path($audit->cphoto_path) : null,
                 'auditee_name' => $audit->cauditee,
                 'submitted_at' => $audit->submitted_at ? $audit->submitted_at->format('Y-m-d H:i:s') : null,
             ],
