@@ -16,6 +16,7 @@ use App\Models\MauditFoto;
 use App\Models\MauditResponses;
 use App\Services\AuditReportService;
 use App\Services\ImageUploadService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +87,8 @@ class AuditReportController extends Controller
     {
         try {
             $data = $this->auditService->getDetail($id);
-            return view('audit.pdf-report', $data);
+            $pdf = Pdf::loadView('audit.pdf-report', $data);
+            return $pdf->download('audit_' . $data['audit']['document_id'] . '.pdf');
         } catch (Exception $e) {
             return response("Gagal me-render laporan: " . $e->getMessage(), 500);
         }

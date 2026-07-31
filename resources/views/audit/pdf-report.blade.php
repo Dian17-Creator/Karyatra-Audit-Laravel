@@ -21,364 +21,371 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>{{ $audit['document_id'] }}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        html, body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 10pt;
-            line-height: 1.3;
-            color: #222;
-            margin: 0;
-            padding: 0;
-        }
-
+        /*
+         * DOMPDF COMPATIBLE CSS
+         * Avoiding Flexbox and Grid. Using Table and Float for layout.
+         */
         @page {
             size: A4;
-            margin: 12mm;
+            margin: 1.2cm;
         }
 
-        .report {
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
             padding: 0;
         }
 
-        .large-text {
-            font-size: 18px;
-            font-weight: 800;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 18px;
+        .header-table {
             width: 100%;
+            margin-bottom: 20px;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        .status {
-            border: 1px solid #999;
-            padding: 5px 12px;
-            font-size: 10pt;
-            border-radius: 4px;
+        .header-title {
+            font-size: 22pt;
             font-weight: bold;
+            color: #333;
         }
 
-        .summary {
+        .status-badge {
+            display: inline-block;
+            border: 2pt solid #B63352;
+            padding: 6pt 15pt;
+            border-radius: 6pt;
+            font-weight: bold;
+            color: #B63352;
+            text-transform: uppercase;
+            font-size: 10pt;
+        }
+
+        .summary-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 25px;
         }
 
-        .summary td {
-            border: 1px solid #ddd;
-            font-size: 9.5pt;
-            padding: 6px;
+        .summary-table td {
+            border: 1pt solid #ddd;
+            padding: 10pt;
+            vertical-align: middle;
         }
 
-        .summary td:nth-child(odd) {
-            width: 140px;
-            background: #f5f5f5;
+        .summary-label {
+            width: 20%;
+            background-color: #f8f9fa;
             font-weight: bold;
+            color: #555;
+            font-size: 9pt;
+            text-transform: uppercase;
+        }
+
+        .summary-value {
+            width: 30%;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .score-large {
+            font-size: 16pt;
+            color: #B63352;
         }
 
         hr {
-            border: none;
-            border-top: 1px solid #999;
-            margin: 15px 0;
+            border: 0;
+            border-top: 1.5pt solid #B63352;
+            margin: 25pt 0;
         }
 
         h2 {
-            margin-top: 15px;
-            margin-bottom: 10px;
-            font-size: 18px;
+            font-size: 16pt;
+            color: #333;
+            margin-bottom: 15pt;
+            padding-bottom: 6pt;
         }
 
-        .category {
+        /* MODERN ASSESSMENT TABLE */
+        .category-table {
             width: 100%;
-            margin-bottom: 15px;
+            border-collapse: collapse;
+            margin-bottom: 20pt;
+            page-break-inside: auto;
         }
 
-        .category-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            font-weight: bold;
-            padding: 8px 10px;
-            background: #f2f2f2;
-            border: 1px solid #ccc;
+        .category-row-header {
+            background-color: #B63352;
+            color: white;
         }
 
-        .question {
-            border: 1px solid #ddd;
-            border-top: none;
-            padding: 6px 10px;
-            break-inside: avoid;
-        }
-
-        .question-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .score {
-            min-width: 25px;
-            text-align: right;
-            font-size: 11pt;
-            font-weight: 700;
-        }
-
-        .remark {
-            margin-top: 4px;
-            margin-left: 20px;
-            padding: 4px 8px;
-            font-size: 9.5pt;
-            border-left: 3px solid #bbb;
-            background: #fcfcfc;
-        }
-
-        .photo-category {
-            margin-bottom: 25px;
-            break-inside: avoid;
-        }
-
-        .photo-question-title {
+        .category-row-header td {
+            padding: 10pt 12pt;
             font-size: 12pt;
-            font-weight: 700;
-            margin-top: 20px;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid #ddd;
+            font-weight: bold;
         }
 
-        .photo-gallery {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+        .question-row {
+            border-bottom: 1pt solid #eee;
         }
 
-        .gallery-photo {
+        .question-row td {
+            padding: 12pt;
+            vertical-align: top;
+        }
+
+        .question-text-cell {
+            width: 85%;
+        }
+
+        .score-cell {
+            width: 15%;
+            text-align: center;
+        }
+
+        .score-pill {
+            display: block;
+            padding: 4pt 0;
+            border-radius: 5pt;
+            color: white;
+            font-weight: bold;
+            font-size: 10pt;
+            width: 40pt;
+            margin: 0 auto;
+        }
+
+        .remark-box {
+            margin-top: 8pt;
+            padding: 8pt 12pt;
+            background-color: #fdfdfd;
+            border: 1pt solid #eee;
+            border-left: 4pt solid #B63352;
+            font-size: 9.5pt;
+            color: #555;
+            border-radius: 4pt;
+        }
+
+        .remark-label {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 3pt;
+        }
+
+        /* SCORE COLORS */
+        .bg-red    { background-color: #dc2626; }
+        .bg-orange { background-color: #f97316; }
+        .bg-yellow { background-color: #ca8a04; }
+        .bg-blue   { background-color: #2563eb; }
+        .bg-green  { background-color: #16a34a; }
+        .bg-gray   { background-color: #6b7280; }
+
+        /* ENHANCED SIGNATURE SECTION */
+        .signature-table {
             width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border: 1px solid #bbb;
-            border-radius: 4px;
-        }
-
-        .annotated-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-            break-inside: avoid;
-        }
-
-        .annotated-item {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-            border: 1px solid #eee;
-            padding: 8px;
-            border-radius: 6px;
-        }
-
-        .annotated-photo {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .annotated-notes {
-            flex: 1;
-            font-size: 9pt;
-        }
-
-        .annotated-notes p { margin: 0 0 5px; }
-
-        .score-red    { color: #dc2626; }
-        .score-orange { color: #f97316; }
-        .score-yellow { color: #ca8a04; }
-        .score-blue   { color: #2563eb; }
-        .score-green  { color: #16a34a; }
-        .score-na     { color: #4b5563; }
-
-        .signature {
-            width: 100%;
-            margin-top: 30px;
+            margin-top: 50pt;
             border-collapse: collapse;
         }
 
-        .signature td {
+        .signature-table td {
+            width: 33.33%;
             text-align: center;
             vertical-align: top;
-            padding: 0 15px;
+            padding: 15pt;
         }
 
-        .sig-title {
+        .signature-label {
+            font-size: 10pt;
             font-weight: bold;
-            color: #666;
-            margin-bottom: 10px;
-            font-size: 11px;
+            color: #333;
+            margin-bottom: 12pt;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+        }
+
+        .signature-img-container {
+            height: 220pt; /* FURTHER INCREASED SIZE */
+            border: 1.5pt solid #eee;
+            background-color: #fcfcfc;
+            margin: 12pt 0;
+            line-height: 220pt;
+            border-radius: 8pt;
+        }
+
+        .signature-img {
+            max-width: 95%;
+            max-height: 210pt;
+            vertical-align: middle;
+            border-radius: 4pt;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            font-size: 13pt;
+            margin-top: 15pt;
+            color: #B63352;
+        }
+
+        .photo-grid-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .photo-grid-td {
+            width: 25%;
+            padding: 6pt;
+        }
+
+        .photo-img {
+            width: 100%;
+            height: 140pt;
+            object-fit: cover;
+            border: 1.5pt solid #ddd;
+            border-radius: 6pt;
+        }
+
+        .annotated-table {
+            width: 100%;
+            margin-bottom: 20pt;
+            border: 1.5pt solid #eee;
+            border-radius: 8pt;
+            background-color: #f9f9f9;
+        }
+
+        .annotated-img-td {
+            width: 150pt;
+            padding: 10pt;
+        }
+
+        .annotated-content-td {
+            padding: 15pt;
+            vertical-align: top;
+        }
+
+        .note-label {
+            font-weight: bold;
+            font-size: 9pt;
+            color: #B63352;
+            margin-bottom: 4pt;
             text-transform: uppercase;
         }
 
-        .sig-name {
-            font-weight: bold;
-            margin-top: 10px;
-            text-transform: uppercase;
-        }
-
-        .verification-photo {
-            width: 180px;
-            height: 120px;
-            object-fit: contain;
-            border: 1px solid #bbb;
-            background: #f9f9f9;
-        }
-
-        .print-toolbar {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-        }
-
-        .print-toolbar button {
-            padding: 12px 30px;
-            background: #b63352;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        @media print {
-            .print-toolbar { display: none; }
-            .report { padding: 0; }
-            * { -webkit-print-color-adjust: exact !important; }
-        }
+        .clear { clear: both; }
+        .page-break { page-break-after: always; }
     </style>
 </head>
-<body class="report">
+<body>
 
-    <div class="print-toolbar">
-        <button type="button" onclick="window.print()">
-            <i class="fa-solid fa-print"></i>
-            PRINT / SAVE AS PDF
-        </button>
-    </div>
-
-    <div class="header">
-        <div>
-            <h1>{{ $audit['document_id'] }}</h1>
-        </div>
-        <div class="status">
-            {{ fmtStatus($audit['status']) }}
-        </div>
-    </div>
-
-    <table class="summary">
+    <table class="header-table">
         <tr>
-            <td>Departemen/Divisi</td>
-            <td>{{ $audit['department_name'] }}</td>
-            <td>Auditor</td>
-            <td>{{ $audit['auditor_name'] }}</td>
-        </tr>
-        <tr>
-            <td>Tanggal Audit</td>
-            <td>{{ \Carbon\Carbon::parse($audit['audit_date'])->translatedFormat('d F Y') }}</td>
-            <td>Tanggal Selesai</td>
-            <td>{{ $audit['submitted_at'] ? \Carbon\Carbon::parse($audit['submitted_at'])->translatedFormat('d F Y, H:i') : '-' }}</td>
-        </tr>
-        <tr>
-            <td>Nilai Total</td>
-            <td class="large-text">{{ number_format($audit['total_score'], 1) }} / {{ number_format($audit['max_score'], 1) }}</td>
-            <td>Persentase</td>
-            <td class="large-text" style="color: #b63352">{{ number_format($audit['percentage'], 2) }}%</td>
+            <td>
+                <div class="header-title">{{ $audit['document_id'] }}</div>
+            </td>
+            <td align="right">
+                <div class="status-badge">{{ fmtStatus($audit['status']) }}</div>
+            </td>
         </tr>
     </table>
 
-    <hr>
+    <table class="summary-table">
+        <tr>
+            <td class="summary-label">Departemen</td>
+            <td class="summary-value">{{ $audit['department_name'] }}</td>
+            <td class="summary-label">Auditor</td>
+            <td class="summary-value">{{ $audit['auditor_name'] }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Tanggal Audit</td>
+            <td class="summary-value">{{ \Carbon\Carbon::parse($audit['audit_date'])->translatedFormat('d F Y') }}</td>
+            <td class="summary-label">Tanggal Selesai</td>
+            <td class="summary-value">{{ $audit['submitted_at'] ? \Carbon\Carbon::parse($audit['submitted_at'])->translatedFormat('d F Y, H:i') : '-' }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Nilai Total</td>
+            <td class="summary-value score-large">{{ number_format($audit['total_score'], 1) }} / {{ number_format($audit['max_score'], 1) }}</td>
+            <td class="summary-label">Persentase</td>
+            <td class="summary-value score-large">{{ number_format($audit['percentage'], 2) }}%</td>
+        </tr>
+    </table>
 
     <h2>Hasil Penilaian</h2>
 
     @foreach($categories as $category)
-    <div class="category">
-        <div class="category-title">
-            <span>{{ $category['name'] }}</span>
-            <span class="category-score">
-                {{ number_format($category['total_score'], 1) }} / {{ number_format($category['max_score'], 1) }}
-                ({{ round($category['percentage']) }}%)
-            </span>
-        </div>
-
-        @foreach($category['questions'] as $index => $question)
-            <div class="question">
-                <div class="question-header">
-                    <div>{{ $index + 1 }}. {{ $question['question'] }}</div>
-                    @php
-                        $score = $question['response']['score'];
-                        $isNa = $question['response']['is_na'];
-                        $scoreText = $isNa ? 'N/A' : ($score !== null ? rtrim(rtrim(number_format($score, 1), '0'), '.') : '-');
-                        $scoreClass = 'score-na';
-                        if (!$isNa && $score !== null) {
-                            $val = (float)$score;
-                            if ($val == 0) $scoreClass = 'score-red';
-                            elseif ($val == 0.5) $scoreClass = 'score-orange';
-                            elseif ($val == 1.0) $scoreClass = 'score-yellow';
-                            elseif ($val == 1.5) $scoreClass = 'score-blue';
-                            elseif ($val == 2.0) $scoreClass = 'score-green';
-                        }
-                    @endphp
-                    <div class="score {{ $scoreClass }}">{{ $scoreText }}</div>
-                </div>
-                @if(!empty($question['response']['remark']))
-                    <div class="remark">
-                        {!! nl2br(e($question['response']['remark'])) !!}
-                    </div>
-                @endif
-            </div>
-        @endforeach
-    </div>
+        <table class="category-table">
+            <tr class="category-row-header">
+                <td colspan="2">
+                    <span style="float: right; font-weight: normal; font-size: 10pt;">
+                        Achieved: {{ round($category['percentage']) }}%
+                    </span>
+                    {{ $category['name'] }}
+                </td>
+            </tr>
+            @foreach($category['questions'] as $index => $question)
+                <tr class="question-row">
+                    <td class="question-text-cell">
+                        <div style="font-weight: bold; margin-bottom: 4pt;">{{ $index + 1 }}. {{ $question['question'] }}</div>
+                        @if(!empty($question['response']['remark']))
+                            <div class="remark-box">
+                                <div class="remark-label">Catatan / Temuan</div>
+                                {!! nl2br(e($question['response']['remark'])) !!}
+                            </div>
+                        @endif
+                    </td>
+                    <td class="score-cell">
+                        @php
+                            $score = $question['response']['score'];
+                            $isNa = $question['response']['is_na'];
+                            $scoreText = $isNa ? 'N/A' : ($score !== null ? rtrim(rtrim(number_format($score, 1), '0'), '.') : '-');
+                            $scoreBg = 'bg-gray';
+                            if (!$isNa && $score !== null) {
+                                $val = (float)$score;
+                                if ($val == 0) $scoreBg = 'bg-red';
+                                elseif ($val == 0.5) $scoreBg = 'bg-orange';
+                                elseif ($val == 1.0) $scoreBg = 'bg-yellow';
+                                elseif ($val == 1.5) $scoreBg = 'bg-blue';
+                                elseif ($val == 2.0) $scoreBg = 'bg-green';
+                            }
+                        @endphp
+                        <div class="score-pill {{ $scoreBg }}">{{ $scoreText }}</div>
+                    </td>
+                </tr>
+            @endforeach
+        </table>
     @endforeach
 
-    <hr>
-
-    <table class="signature">
+    <!-- SIGNATURE AREA - EXPANDED -->
+    <table class="signature-table">
         <tr>
             <td>
-                <div class="sig-title">Auditor</div>
-                <div class="sig-name">{{ $audit['auditor_name'] }}</div>
+                <div class="signature-label">Auditor</div>
+                <div class="signature-img-container" style="border:none; background:none;"></div>
+                <div class="signature-name">{{ $audit['auditor_name'] }}</div>
             </td>
             <td>
-                <div class="sig-title">Foto Verifikasi</div>
-                @if($audit['verification_photo'])
-                    <img src="{{ $audit['verification_photo'] }}" class="verification-photo">
-                @else
-                    <div style="height: 100px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999">Tidak ada foto</div>
-                @endif
+                <div class="signature-label">Foto Verifikasi</div>
+                <div class="signature-img-container">
+                    @if($audit['verification_photo'])
+                        <img src="{{ $audit['verification_photo'] }}" class="signature-img">
+                    @else
+                        <span style="color:#ccc; font-size: 9pt;">DOKUMEN BELUM DIVERIFIKASI</span>
+                    @endif
+                </div>
             </td>
             <td>
-                <div class="sig-title">Auditee / PIC</div>
-                <div class="sig-name">{{ $audit['auditee_name'] ?? '-' }}</div>
+                <div class="signature-label">Auditee / PIC</div>
+                <div class="signature-img-container" style="border:none; background:none;"></div>
+                <div class="signature-name">{{ $audit['auditee_name'] ?? '-' }}</div>
             </td>
         </tr>
     </table>
 
     @if($hasPhotos)
-        <div style="page-break-before: always;"></div>
-        <h2>Dokumentasi Foto Temuan</h2>
+        <div class="page-break"></div>
+        <h2 style="border-bottom: 2pt solid #333;">Dokumentasi Foto Temuan</h2>
 
         @foreach($categories as $category)
             @php
@@ -386,44 +393,61 @@
             @endphp
 
             @if(!empty($photoQuestions))
-                <div class="photo-category">
-                    <h3 style="background: #f9f9f9; padding: 5px 10px; border-left: 4px solid #b63352;">{{ $category['name'] }}</h3>
-
-                    @foreach($photoQuestions as $q)
-                        <div class="photo-question">
-                            <div class="photo-question-title">{{ $q['question'] }} ({{ count($q['photos']) }} foto)</div>
-
-                            @php
-                                $gallery = array_filter($q['photos'], fn($p) => empty($p['remark']) && empty($p['action']));
-                                $annotated = array_filter($q['photos'], fn($p) => !empty($p['remark']) || !empty($p['action']));
-                            @endphp
-
-                            @if(!empty($gallery))
-                                <div class="photo-gallery">
-                                    @foreach($gallery as $p)
-                                        <img src="{{ $p['photo_path'] }}" class="gallery-photo">
-                                    @endforeach
-                                </div>
-                            @endif
-
-                            @if(!empty($annotated))
-                                @foreach(array_chunk($annotated, 2) as $row)
-                                    <div class="annotated-row">
-                                        @foreach($row as $p)
-                                            <div class="annotated-item">
-                                                <img src="{{ $p['photo_path'] }}" class="annotated-photo">
-                                                <div class="annotated-notes">
-                                                    @if($p['remark']) <p><strong>Temuan:</strong> {{ $p['remark'] }}</p> @endif
-                                                    @if($p['action']) <p><strong>Rekomendasi:</strong> {{ $p['action'] }}</p> @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endforeach
-                            @endif
-                        </div>
-                    @endforeach
+                <div style="background-color: #f1f1f1; padding: 10pt; margin-top: 20pt; border-left: 5pt solid #B63352; font-weight: bold;">
+                    {{ $category['name'] }}
                 </div>
+
+                @foreach($photoQuestions as $q)
+                    <div style="margin-top: 15pt; margin-bottom: 25pt;">
+                        <div style="font-size: 11pt; font-weight: bold; margin-bottom: 10pt; color: #444;">
+                            {{ $q['question'] }} <span style="font-weight: normal; color: #888;">({{ count($q['photos']) }} foto)</span>
+                        </div>
+
+                        @php
+                            $gallery = array_filter($q['photos'], fn($p) => empty($p['remark']) && empty($p['action']));
+                            $annotated = array_filter($q['photos'], fn($p) => !empty($p['remark']) || !empty($p['action']));
+                        @endphp
+
+                        @if(!empty($gallery))
+                            <table class="photo-grid-table">
+                                @foreach(array_chunk($gallery, 4) as $row)
+                                    <tr>
+                                        @foreach($row as $p)
+                                            <td class="photo-grid-td">
+                                                <img src="{{ $p['photo_path'] }}" class="photo-img">
+                                            </td>
+                                        @endforeach
+                                        @for($i = count($row); $i < 4; $i++)
+                                            <td class="photo-grid-td"></td>
+                                        @endfor
+                                    </tr>
+                                @endforeach
+                            </table>
+                        @endif
+
+                        @if(!empty($annotated))
+                            @foreach($annotated as $p)
+                                <table class="annotated-table">
+                                    <tr>
+                                        <td class="annotated-img-td">
+                                            <img src="{{ $p['photo_path'] }}" style="width: 130pt; height: 130pt; object-fit: cover; border-radius: 4pt;">
+                                        </td>
+                                        <td class="annotated-content-td">
+                                            @if($p['remark'])
+                                                <div class="note-label">Temuan / Observasi:</div>
+                                                <div style="margin-bottom: 12pt; font-size: 10pt;">{{ $p['remark'] }}</div>
+                                            @endif
+                                            @if($p['action'])
+                                                <div class="note-label">Rekomendasi Tindakan:</div>
+                                                <div style="font-size: 10pt;">{{ $p['action'] }}</div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
+                            @endforeach
+                        @endif
+                    </div>
+                @endforeach
             @endif
         @endforeach
     @endif
