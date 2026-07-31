@@ -105,23 +105,24 @@ break 2;
 
         .summary-table td {
             border: 1pt solid #ddd;
-            padding: 5pt 8pt;
+            padding: 10pt;
             vertical-align: middle;
         }
 
         .summary-label {
+            width: 20%;
             background-color: #f8f9fa;
             font-weight: bold;
             color: #555;
-            font-size: 7.5pt;
+            font-size: 7pt;
             text-transform: uppercase;
-            white-space: nowrap;
         }
 
         .summary-value {
+            width: 30%;
             font-weight: bold;
             color: #222;
-            font-size: 8.5pt;
+            font-size: 8pt;
             white-space: nowrap;
         }
 
@@ -360,10 +361,14 @@ break 2;
             <td class="summary-value">{{ $audit['department_name'] }}</td>
             <td class="summary-label">Auditor</td>
             <td class="summary-value">{{ $audit['auditor_name'] }}</td>
+        </tr>
+        <tr>
             <td class="summary-label">Tanggal Audit</td>
             <td class="summary-value">{{ \Carbon\Carbon::parse($audit['audit_date'])->translatedFormat('d F Y') }}</td>
             <td class="summary-label">Tanggal Selesai</td>
             <td class="summary-value">{{ $audit['submitted_at'] ? \Carbon\Carbon::parse($audit['submitted_at'])->translatedFormat('d F Y, H:i') : '-' }}</td>
+        </tr>
+        <tr>
             <td class="summary-label">Nilai Total</td>
             <td class="summary-value score-large">{{ number_format($audit['total_score'], 1) }} / {{ number_format($audit['max_score'], 1) }}</td>
             <td class="summary-label">Persentase</td>
