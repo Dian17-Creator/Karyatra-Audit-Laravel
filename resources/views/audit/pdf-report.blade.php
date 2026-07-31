@@ -7,6 +7,35 @@
         };
     }
 
+    /**
+     * Helper to convert asset URLs to local paths for DomPDF
+     */
+    function getLocalPath($url) {
+        if (empty($url)) return null;
+
+        // Remove query strings if any
+        $cleanUrl = explode('?', $url)[0];
+
+        // List of possible hosts to strip
+        $hosts = [
+            request()->getSchemeAndHttpHost(),
+            url('/'),
+            'http://localhost'
+        ];
+
+        $relativePath = $cleanUrl;
+        foreach ($hosts as $host) {
+            if (str_contains($cleanUrl, $host)) {
+                $relativePath = str_replace($host, '', $cleanUrl);
+                break;
+            }
+        }
+
+        $path = public_path(ltrim($relativePath, '/'));
+
+        return file_exists($path) ? $path : $url;
+    }
+
     $hasPhotos = false;
     foreach ($categories as $category) {
         foreach ($category['questions'] as $question) {
@@ -369,7 +398,7 @@
                 <div class="signature-label">Foto Verifikasi</div>
                 <div class="signature-img-container">
                     @if($audit['verification_photo'])
-                        <img src="{{ $audit['verification_photo'] }}" class="signature-img">
+                        <img src="{{ getLocalPath($audit['verification_photo']) }}" class="signature-img">
                     @else
                         <span style="color:#ccc; font-size: 9pt;">DOKUMEN BELUM DIVERIFIKASI</span>
                     @endif
@@ -414,7 +443,7 @@
                                     <tr>
                                         @foreach($row as $p)
                                             <td class="photo-grid-td">
-                                                <img src="{{ $p['photo_path'] }}" class="photo-img">
+                                                <img src="{{ getLocalPath($p['photo_path']) }}" class="photo-img">
                                             </td>
                                         @endforeach
                                         @for($i = count($row); $i < 4; $i++)
@@ -430,7 +459,7 @@
                                 <table class="annotated-table">
                                     <tr>
                                         <td class="annotated-img-td">
-                                            <img src="{{ $p['photo_path'] }}" style="width: 130pt; height: 130pt; object-fit: cover; border-radius: 4pt;">
+                                            <img src="{{ getLocalPath($p['photo_path']) }}" style="width: 130pt; height: 130pt; object-fit: cover; border-radius: 4pt;">
                                         </td>
                                         <td class="annotated-content-td">
                                             @if($p['remark'])
