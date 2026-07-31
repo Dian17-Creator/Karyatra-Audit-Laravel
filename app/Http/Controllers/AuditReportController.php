@@ -80,6 +80,19 @@ class AuditReportController extends Controller
     }
 
     /**
+     * Export audit report to printable HTML/PDF
+     */
+    public function exportPdf(int $id)
+    {
+        try {
+            $data = $this->auditService->getDetail($id);
+            return view('audit.pdf-report', $data);
+        } catch (Exception $e) {
+            return response("Gagal me-render laporan: " . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Mulai audit baru
      */
     public function store(AuditCreateRequest $request)
