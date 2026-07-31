@@ -1,61 +1,65 @@
 @php
-    function fmtStatus($status) {
-        return match ($status) {
-            "Draft"     => "Draft",
-            "Submitted" => "Selesai",
-            default     => "Dalam Proses",
-        };
-    }
+function fmtStatus($status) {
+return match ($status) {
+"Draft" => "Draft",
+"Submitted" => "Selesai",
+default => "Dalam Proses",
+};
+}
 
-    /**
-     * Helper to convert asset URLs to local paths for DomPDF
-     */
-    function getLocalPath($url) {
-        if (empty($url)) return null;
+/**
+* Helper to convert images to Base64 for guaranteed visibility in DomPDF
+*/
+function getBase64Image($url) {
+if (empty($url)) return null;
 
-        // Remove query strings if any
-        $cleanUrl = explode('?', $url)[0];
+try {
+// Find relative path by stripping host info
+$cleanUrl = explode('?', $url)[0];
+$hosts = [request()->getSchemeAndHttpHost(), url('/'), 'http://localhost'];
 
-        // List of possible hosts to strip
-        $hosts = [
-            request()->getSchemeAndHttpHost(),
-            url('/'),
-            'http://localhost'
-        ];
+$relativePath = $cleanUrl;
+foreach ($hosts as $host) {
+if (str_contains($cleanUrl, $host)) {
+$relativePath = str_replace($host, '', $cleanUrl);
+break;
+}
+}
 
-        $relativePath = $cleanUrl;
-        foreach ($hosts as $host) {
-            if (str_contains($cleanUrl, $host)) {
-                $relativePath = str_replace($host, '', $cleanUrl);
-                break;
-            }
-        }
+$path = public_path(ltrim($relativePath, '/'));
 
-        $path = public_path(ltrim($relativePath, '/'));
+if (file_exists($path)) {
+$type = pathinfo($path, PATHINFO_EXTENSION);
+$data = file_get_contents($path);
+return 'data:image/' . $type . ';base64,' . base64_encode($data);
+}
+} catch (\Exception $e) {
+// Fallback to original URL if anything fails
+}
 
-        return file_exists($path) ? $path : $url;
-    }
+return $url;
+}
 
-    $hasPhotos = false;
-    foreach ($categories as $category) {
-        foreach ($category['questions'] as $question) {
-            if (!empty($question['photos'])) {
-                $hasPhotos = true;
-                break 2;
-            }
-        }
-    }
+$hasPhotos = false;
+foreach ($categories as $category) {
+foreach ($category['questions'] as $question) {
+if (!empty($question['photos'])) {
+$hasPhotos = true;
+break 2;
+}
+}
+}
 @endphp
 <!doctype html>
 <html>
+
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>{{ $audit['document_id'] }}</title>
     <style>
-        /*
+        /* 
          * DOMPDF COMPATIBLE CSS
-         * Avoiding Flexbox and Grid. Using Table and Float for layout.
          */
         @page {
             size: A4;
@@ -206,12 +210,29 @@
         }
 
         /* SCORE COLORS */
-        .bg-red    { background-color: #dc2626; }
-        .bg-orange { background-color: #f97316; }
-        .bg-yellow { background-color: #ca8a04; }
-        .bg-blue   { background-color: #2563eb; }
-        .bg-green  { background-color: #16a34a; }
-        .bg-gray   { background-color: #6b7280; }
+        .bg-red {
+            background-color: #dc2626;
+        }
+
+        .bg-orange {
+            background-color: #f97316;
+        }
+
+        .bg-yellow {
+            background-color: #ca8a04;
+        }
+
+        .bg-blue {
+            background-color: #2563eb;
+        }
+
+        .bg-green {
+            background-color: #16a34a;
+        }
+
+        .bg-gray {
+            background-color: #6b7280;
+        }
 
         /* ENHANCED SIGNATURE SECTION */
         .signature-table {
@@ -237,7 +258,7 @@
         }
 
         .signature-img-container {
-            height: 220pt; /* FURTHER INCREASED SIZE */
+            height: 220pt;
             border: 1.5pt solid #eee;
             background-color: #fcfcfc;
             margin: 12pt 0;
@@ -303,10 +324,16 @@
             text-transform: uppercase;
         }
 
-        .clear { clear: both; }
-        .page-break { page-break-after: always; }
+        .clear {
+            clear: both;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
+
 <body>
 
     <table class="header-table">
@@ -344,49 +371,49 @@
     <h2>Hasil Penilaian</h2>
 
     @foreach($categories as $category)
-        <table class="category-table">
-            <tr class="category-row-header">
-                <td colspan="2">
-                    <span style="float: right; font-weight: normal; font-size: 10pt;">
-                        Achieved: {{ round($category['percentage']) }}%
-                    </span>
-                    {{ $category['name'] }}
-                </td>
-            </tr>
-            @foreach($category['questions'] as $index => $question)
-                <tr class="question-row">
-                    <td class="question-text-cell">
-                        <div style="font-weight: bold; margin-bottom: 4pt;">{{ $index + 1 }}. {{ $question['question'] }}</div>
-                        @if(!empty($question['response']['remark']))
-                            <div class="remark-box">
-                                <div class="remark-label">Catatan / Temuan</div>
-                                {!! nl2br(e($question['response']['remark'])) !!}
-                            </div>
-                        @endif
-                    </td>
-                    <td class="score-cell">
-                        @php
-                            $score = $question['response']['score'];
-                            $isNa = $question['response']['is_na'];
-                            $scoreText = $isNa ? 'N/A' : ($score !== null ? rtrim(rtrim(number_format($score, 1), '0'), '.') : '-');
-                            $scoreBg = 'bg-gray';
-                            if (!$isNa && $score !== null) {
-                                $val = (float)$score;
-                                if ($val == 0) $scoreBg = 'bg-red';
-                                elseif ($val == 0.5) $scoreBg = 'bg-orange';
-                                elseif ($val == 1.0) $scoreBg = 'bg-yellow';
-                                elseif ($val == 1.5) $scoreBg = 'bg-blue';
-                                elseif ($val == 2.0) $scoreBg = 'bg-green';
-                            }
-                        @endphp
-                        <div class="score-pill {{ $scoreBg }}">{{ $scoreText }}</div>
-                    </td>
-                </tr>
-            @endforeach
-        </table>
+    <table class="category-table">
+        <tr class="category-row-header">
+            <td colspan="2">
+                <span style="float: right; font-weight: normal; font-size: 10pt;">
+                    Achieved: {{ round($category['percentage']) }}%
+                </span>
+                {{ $category['name'] }}
+            </td>
+        </tr>
+        @foreach($category['questions'] as $index => $question)
+        <tr class="question-row">
+            <td class="question-text-cell">
+                <div style="font-weight: bold; margin-bottom: 4pt;">{{ $index + 1 }}. {{ $question['question'] }}</div>
+                @if(!empty($question['response']['remark']))
+                <div class="remark-box">
+                    <div class="remark-label">Catatan / Temuan</div>
+                    {!! nl2br(e($question['response']['remark'])) !!}
+                </div>
+                @endif
+            </td>
+            <td class="score-cell">
+                @php
+                $score = $question['response']['score'];
+                $isNa = $question['response']['is_na'];
+                $scoreText = $isNa ? 'N/A' : ($score !== null ? rtrim(rtrim(number_format($score, 1), '0'), '.') : '-');
+                $scoreBg = 'bg-gray';
+                if (!$isNa && $score !== null) {
+                $val = (float)$score;
+                if ($val == 0) $scoreBg = 'bg-red';
+                elseif ($val == 0.5) $scoreBg = 'bg-orange';
+                elseif ($val == 1.0) $scoreBg = 'bg-yellow';
+                elseif ($val == 1.5) $scoreBg = 'bg-blue';
+                elseif ($val == 2.0) $scoreBg = 'bg-green';
+                }
+                @endphp
+                <div class="score-pill {{ $scoreBg }}">{{ $scoreText }}</div>
+            </td>
+        </tr>
+        @endforeach
+    </table>
     @endforeach
 
-    <!-- SIGNATURE AREA - EXPANDED -->
+    <!-- SIGNATURE AREA -->
     <table class="signature-table">
         <tr>
             <td>
@@ -398,9 +425,9 @@
                 <div class="signature-label">Foto Verifikasi</div>
                 <div class="signature-img-container">
                     @if($audit['verification_photo'])
-                        <img src="{{ getLocalPath($audit['verification_photo']) }}" class="signature-img">
+                    <img src="{{ getBase64Image($audit['verification_photo']) }}" class="signature-img">
                     @else
-                        <span style="color:#ccc; font-size: 9pt;">DOKUMEN BELUM DIVERIFIKASI</span>
+                    <span style="color:#ccc; font-size: 9pt;">DOKUMEN BELUM DIVERIFIKASI</span>
                     @endif
                 </div>
             </td>
@@ -413,73 +440,75 @@
     </table>
 
     @if($hasPhotos)
-        <div class="page-break"></div>
-        <h2 style="border-bottom: 2pt solid #333;">Dokumentasi Foto Temuan</h2>
+    <div class="page-break"></div>
+    <h2 style="border-bottom: 2pt solid #333;">Dokumentasi Foto Temuan</h2>
 
-        @foreach($categories as $category)
-            @php
-                $photoQuestions = array_filter($category['questions'], fn($q) => !empty($q['photos']));
-            @endphp
+    @foreach($categories as $category)
+    @php
+    $photoQuestions = array_filter($category['questions'], fn($q) => !empty($q['photos']));
+    @endphp
 
-            @if(!empty($photoQuestions))
-                <div style="background-color: #f1f1f1; padding: 10pt; margin-top: 20pt; border-left: 5pt solid #B63352; font-weight: bold;">
-                    {{ $category['name'] }}
-                </div>
+    @if(!empty($photoQuestions))
+    <div style="background-color: #f1f1f1; padding: 10pt; margin-top: 20pt; border-left: 5pt solid #B63352; font-weight: bold;">
+        {{ $category['name'] }}
+    </div>
 
-                @foreach($photoQuestions as $q)
-                    <div style="margin-top: 15pt; margin-bottom: 25pt;">
-                        <div style="font-size: 11pt; font-weight: bold; margin-bottom: 10pt; color: #444;">
-                            {{ $q['question'] }} <span style="font-weight: normal; color: #888;">({{ count($q['photos']) }} foto)</span>
-                        </div>
+    @foreach($photoQuestions as $q)
+    <div style="margin-top: 15pt; margin-bottom: 25pt;">
+        <div style="font-size: 11pt; font-weight: bold; margin-bottom: 10pt; color: #444;">
+            {{ $q['question'] }} <span style="font-weight: normal; color: #888;">({{ count($q['photos']) }} foto)</span>
+        </div>
 
-                        @php
-                            $gallery = array_filter($q['photos'], fn($p) => empty($p['remark']) && empty($p['action']));
-                            $annotated = array_filter($q['photos'], fn($p) => !empty($p['remark']) || !empty($p['action']));
-                        @endphp
+        @php
+        $gallery = array_filter($q['photos'], fn($p) => empty($p['remark']) && empty($p['action']));
+        $annotated = array_filter($q['photos'], fn($p) => !empty($p['remark']) || !empty($p['action']));
+        @endphp
 
-                        @if(!empty($gallery))
-                            <table class="photo-grid-table">
-                                @foreach(array_chunk($gallery, 4) as $row)
-                                    <tr>
-                                        @foreach($row as $p)
-                                            <td class="photo-grid-td">
-                                                <img src="{{ getLocalPath($p['photo_path']) }}" class="photo-img">
-                                            </td>
-                                        @endforeach
-                                        @for($i = count($row); $i < 4; $i++)
-                                            <td class="photo-grid-td"></td>
-                                        @endfor
-                                    </tr>
-                                @endforeach
-                            </table>
-                        @endif
-
-                        @if(!empty($annotated))
-                            @foreach($annotated as $p)
-                                <table class="annotated-table">
-                                    <tr>
-                                        <td class="annotated-img-td">
-                                            <img src="{{ getLocalPath($p['photo_path']) }}" style="width: 130pt; height: 130pt; object-fit: cover; border-radius: 4pt;">
-                                        </td>
-                                        <td class="annotated-content-td">
-                                            @if($p['remark'])
-                                                <div class="note-label">Temuan / Observasi:</div>
-                                                <div style="margin-bottom: 12pt; font-size: 10pt;">{{ $p['remark'] }}</div>
-                                            @endif
-                                            @if($p['action'])
-                                                <div class="note-label">Rekomendasi Tindakan:</div>
-                                                <div style="font-size: 10pt;">{{ $p['action'] }}</div>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                </table>
-                            @endforeach
-                        @endif
-                    </div>
+        @if(!empty($gallery))
+        <table class="photo-grid-table">
+            @foreach(array_chunk($gallery, 4) as $row)
+            <tr>
+                @foreach($row as $p)
+                <td class="photo-grid-td">
+                    <img src="{{ getBase64Image($p['photo_path']) }}" class="photo-img">
+                </td>
                 @endforeach
-            @endif
+                @for($i = count($row); $i < 4; $i++)
+                    <td class="photo-grid-td">
+                    </td>
+                    @endfor
+            </tr>
+            @endforeach
+        </table>
+        @endif
+
+        @if(!empty($annotated))
+        @foreach($annotated as $p)
+        <table class="annotated-table">
+            <tr>
+                <td class="annotated-img-td">
+                    <img src="{{ getBase64Image($p['photo_path']) }}" style="width: 130pt; height: 130pt; object-fit: cover; border-radius: 4pt;">
+                </td>
+                <td class="annotated-content-td">
+                    @if($p['remark'])
+                    <div class="note-label">Temuan / Observasi:</div>
+                    <div style="margin-bottom: 12pt; font-size: 10pt;">{{ $p['remark'] }}</div>
+                    @endif
+                    @if($p['action'])
+                    <div class="note-label">Rekomendasi Tindakan:</div>
+                    <div style="font-size: 10pt;">{{ $p['action'] }}</div>
+                    @endif
+                </td>
+            </tr>
+        </table>
         @endforeach
+        @endif
+    </div>
+    @endforeach
+    @endif
+    @endforeach
     @endif
 
 </body>
+
 </html>
