@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\MauditAudit;
-use App\Models\MauditFoto;
-use App\Models\MauditResponses;
-use App\Models\MauditQuest;
-use App\Models\mdepartment;
+use App\Models\Audit\MauditAudit;
+use App\Models\Audit\MauditFoto;
+use App\Models\Audit\MauditResponses;
+use App\Models\Audit\MauditQuest;
+use App\Models\Auth\mdepartment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Exception;

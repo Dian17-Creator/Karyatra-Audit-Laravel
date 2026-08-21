@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Auth;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Csalary;
 
 class muser extends Authenticatable
 {

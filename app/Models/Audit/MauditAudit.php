@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Audit;
 
+use App\Models\Auth\mdepartment;
+use App\Models\Auth\muser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Auth;
 
+use App\Models\Audit\MauditAudit;
+use App\Models\Audit\MauditQuest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

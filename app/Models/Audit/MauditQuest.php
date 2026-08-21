@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Audit;
 
+use App\Models\Auth\mdepartment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -41,7 +43,7 @@ class MauditQuest extends Model
     /**
      * Scope hanya pertanyaan aktif
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query)
     {
         return $query->where('factive', 1);
     }

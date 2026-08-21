@@ -11,21 +11,22 @@ use App\Http\Requests\AuditSubmitRequest;
 use App\Http\Requests\AuditUpdateAnswersRequest;
 use App\Http\Requests\AuditUpdatePhotoRequest;
 use App\Http\Requests\AuditUploadPhotoRequest;
-use App\Models\MauditAudit;
-use App\Models\MauditFoto;
-use App\Models\MauditResponses;
+use App\Models\Audit\MauditAudit;
+use App\Models\Audit\MauditFoto;
+use App\Models\Audit\MauditResponses;
 use App\Services\AuditReportService;
 use App\Services\ImageUploadService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 class AuditReportController extends Controller
 {
-    protected $auditService;
-    protected $imageService;
+    protected AuditReportService $auditService;
+    protected ImageUploadService $imageService;
 
     public function __construct(AuditReportService $auditService, ImageUploadService $imageService)
     {
@@ -101,7 +102,7 @@ class AuditReportController extends Controller
     {
         try {
             // Priority: Request parameter > Auth ID > Default 1
-            $auditorId = $request->auditor_id ?? (auth()->id() ?? 1);
+            $auditorId = $request->auditor_id ?? (Auth::id() ?? 1);
 
             $audit = $this->auditService->startAudit($request->department_id, $auditorId);
 
