@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\AuditCategoryController;
 use App\Http\Controllers\AuditQuestionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StockCategoryController;
+use App\Http\Controllers\StockDepartmentController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -45,4 +47,43 @@ Route::prefix('audits')->group(function () {
     Route::post('/delete-photo', [\App\Http\Controllers\AuditReportController::class, 'deletePhoto']);
     Route::post('/submit', [\App\Http\Controllers\AuditReportController::class, 'submit']);
     Route::post('/delete', [\App\Http\Controllers\AuditReportController::class, 'destroy']);
+});
+
+//API STOCK OPNAME
+
+// Stock Category & Item Api
+Route::prefix('stock')->group(function () {
+
+    // Category
+    Route::get('/categories', [StockCategoryController::class, 'index']);
+    Route::post('/categories', [StockCategoryController::class, 'storeCategory']);
+    Route::put('/categories/{id?}', [StockCategoryController::class, 'updateCategory']);
+    Route::delete('/categories/{id?}', [StockCategoryController::class, 'destroyCategory']);
+
+    // Items
+    Route::get('/categories/{categoryId}/items', [StockCategoryController::class, 'getItems']);
+    Route::post('/items', [StockCategoryController::class, 'storeItem']);
+    Route::delete('/items/{id?}', [StockCategoryController::class, 'destroyItem']);
+    Route::post('/items/reorder', [StockCategoryController::class, 'reorderItems']);
+});
+
+// STOCK DEPARTMENT
+Route::prefix('stock/departments')->group(function () {
+    Route::get('/', [StockDepartmentController::class, 'index']);
+    Route::get('/{id}/mapping', [StockDepartmentController::class, 'mapping']);
+    Route::post('/mapping', [StockDepartmentController::class, 'storeMapping']);
+});
+
+// STOCK REPORTS / EXECUTION
+Route::prefix('stock/opname')->group(function () {
+    Route::get('/', [\App\Http\Controllers\StockReportController::class, 'index']);
+    Route::post('/create', [\App\Http\Controllers\StockReportController::class, 'store']);
+    Route::get('/detail/{id}', [\App\Http\Controllers\StockReportController::class, 'show']);
+    Route::get('/{id}/export-pdf', [\App\Http\Controllers\StockReportController::class, 'exportPdf']);
+    Route::post('/update', [\App\Http\Controllers\StockReportController::class, 'updateAnswers']);
+    Route::post('/upload-photo', [\App\Http\Controllers\StockReportController::class, 'uploadPhoto']);
+    Route::post('/update-photo', [\App\Http\Controllers\StockReportController::class, 'updatePhoto']);
+    Route::post('/delete-photo', [\App\Http\Controllers\StockReportController::class, 'deletePhoto']);
+    Route::post('/submit', [\App\Http\Controllers\StockReportController::class, 'submit']);
+    Route::post('/send-email', [\App\Http\Controllers\StockReportController::class, 'sendEmail']);
 });
