@@ -4,8 +4,8 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Auth\Mdepartment;
-use App\Models\Auth\Muser;
+use App\Models\Auth\mdepartment;
+use App\Models\Auth\muser;
 
 class MauditInventory extends Model
 {
