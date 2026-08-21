@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\MauditAudit;
-use App\Models\MauditKat;
-use App\Models\MauditQuest;
+use App\Models\Audit\MauditAudit;
+use App\Models\Audit\MauditKat;
+use App\Models\Audit\MauditQuest;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller

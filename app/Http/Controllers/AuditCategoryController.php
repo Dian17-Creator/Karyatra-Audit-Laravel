@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MauditKat;
+use App\Models\Audit\MauditKat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -71,7 +71,7 @@ class AuditCategoryController extends Controller
     /**
      * PUT /api/audit/categories/{id}
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, int|string $id)
     {
         Log::info('UPDATE MASUK', [
             'id' => $id,
@@ -118,7 +118,7 @@ class AuditCategoryController extends Controller
     /**
      * DELETE /api/audit/categories/{id}
      */
-    public function destroy($id)
+    public function destroy(int|string $id)
     {
         Log::info('DELETE MASUK', [
             'id' => $id,
@@ -151,7 +151,7 @@ class AuditCategoryController extends Controller
     /**
      * GET /api/audit/categories/{id}
      */
-    public function show($id)
+    public function show(int|string $id)
     {
         $category = MauditKat::withCount('questions')->find($id);
 

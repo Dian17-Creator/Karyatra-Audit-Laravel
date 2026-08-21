@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Models\mdepartment;
-use App\Models\MauditKat;
-use App\Models\MauditQuest;
-use App\Models\MauditAudit;
+use App\Models\Auth\mdepartment;
+use App\Models\Audit\MauditKat;
+use App\Models\Audit\MauditQuest;
+use App\Models\Audit\MauditAudit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
