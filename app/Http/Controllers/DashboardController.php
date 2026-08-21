@@ -6,17 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Audit\MauditAudit;
 use App\Models\Audit\MauditKat;
 use App\Models\Audit\MauditQuest;
+use App\Models\Stock\MauditItemgrp;
+use App\Models\Stock\MauditItem;
+use App\Models\Stock\MauditInventory;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
     public function summary(): JsonResponse
     {
+        // Audit Stats
         $totalKategori = MauditKat::count();
-
         $totalPertanyaan = MauditQuest::count();
-
         $totalAudit = MauditAudit::count();
+
+        // Stock Stats
+        $totalKategoriStok = MauditItemgrp::count();
+        $totalBarang = MauditItem::count();
+        $totalStokOpname = MauditInventory::count();
 
         $recentAudits = MauditAudit::with('department')
             ->orderBy('started_at', 'desc')
@@ -32,6 +39,21 @@ class DashboardController extends Controller
             ];
         });
 
+        // Recent Stock Opname
+        $recentOpnames = MauditInventory::with('department')
+            ->orderBy('started_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentStockOpname = $recentOpnames->map(function ($opname) {
+            return [
+                'id' => $opname->nid,
+                'title' => 'Stok Opname ' . ($opname->department->cname ?? 'Departemen'),
+                'subtitle' => $opname->cdocid . ' • ' . ($opname->daudit ? $opname->daudit->format('d M Y') : '-'),
+                'status' => $opname->cstatus
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Dashboard summary berhasil diambil.',
@@ -39,7 +61,11 @@ class DashboardController extends Controller
                 'total_kategori'   => $totalKategori,
                 'total_pertanyaan' => $totalPertanyaan,
                 'total_audit'      => $totalAudit,
-                'recent_activity'  => $recentActivity
+                'total_kategori_stok' => $totalKategoriStok,
+                'total_barang'     => $totalBarang,
+                'total_stok_opname' => $totalStokOpname,
+                'recent_activity'  => $recentActivity,
+                'recent_stock_opname' => $recentStockOpname
             ]
         ]);
     }
