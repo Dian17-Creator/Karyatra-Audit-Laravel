@@ -11,13 +11,11 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // Validasi request
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
-        // Cari user yang memiliki akses audit
         $user = muser::where('cemail', $request->email)
             ->where('faudit', 1)
             ->first();
