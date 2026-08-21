@@ -18,7 +18,7 @@ use Illuminate\Http\UploadedFile;
 
 class StockReportService
 {
-    protected $imageService;
+    protected ImageUploadService $imageService;
 
     public function __construct(ImageUploadService $imageService)
     {
@@ -91,7 +91,7 @@ class StockReportService
         ];
     }
 
-    private function formatHistoryItem($audit)
+    private function formatHistoryItem(MauditInventory $audit)
     {
         return [
             'id' => $audit->nid,

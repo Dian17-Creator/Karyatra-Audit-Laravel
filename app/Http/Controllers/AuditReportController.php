@@ -16,12 +16,14 @@ use App\Models\Audit\MauditFoto;
 use App\Models\Audit\MauditResponses;
 use App\Services\AuditReportService;
 use App\Services\ImageUploadService;
+use App\Mail\ReportMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 
 class AuditReportController extends Controller
 {
@@ -86,9 +88,27 @@ class AuditReportController extends Controller
      */
     public function exportPdf(int $id)
     {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
         try {
             $data = $this->auditService->getDetail($id);
             $pdf = Pdf::loadView('audit.pdf-report', $data);
+
+            // Render DOMPDF terlebih dahulu sebelum memanipulasi canvas
+            $pdf->render();
+
+            // Inject penomoran halaman menggunakan Canvas (Fix bug counter(pages) = 0)
+            $canvas = $pdf->getDomPDF()->getCanvas();
+            $canvas->page_text(
+                530,    // Posisi X (Pojok kanan bawah)
+                815,    // Posisi Y (Bottom margin)
+                "{PAGE_NUM} / {PAGE_COUNT}",
+                null,   // Font default
+                8,      // Ukuran 8pt
+                [0.27, 0.27, 0.27] // Warna #ffffffff
+            );
+
             return $pdf->download('audit_' . $data['audit']['document_id'] . '.pdf');
         } catch (Exception $e) {
             return response("Gagal me-render laporan: " . $e->getMessage(), 500);
@@ -162,7 +182,7 @@ class AuditReportController extends Controller
             }
 
             $absolutePath = $uploadDir . '/' . $filename;
-            $relativePath = 'uploads/' . $cdocid . '/' . $filename;
+            $relativePath = $cdocid . '/' . $filename;
 
             // Pindahkan file photo asli. (Jika perlu di resize, gunakan ImageUploadService)
             // Sistem lama menggunakan move_uploaded_file tanpa resize untuk verification.
@@ -217,7 +237,7 @@ class AuditReportController extends Controller
 
                 $filename = $audit->cdocid . '_' . $question->nid_kat . '_' . $question->nid . '_' . $nextSequence . '.jpg';
                 $absolutePath = $uploadDir . '/' . $filename;
-                $relativePath = 'uploads/' . $audit->cdocid . '/' . $filename;
+                $relativePath = $audit->cdocid . '/' . $filename;
 
                 // Menggunakan ImageUploadService (resize, fix exif, compress)
                 $this->imageService->optimizeAndSave(
@@ -240,7 +260,7 @@ class AuditReportController extends Controller
                     'message' => 'Upload berhasil.',
                     'data' => [
                         'id' => $photo->nid,
-                        'photo_path' => asset($relativePath)
+                        'photo_path' => asset('uploads/' . $relativePath)
                     ]
                 ]);
             });
@@ -290,7 +310,12 @@ class AuditReportController extends Controller
                     throw new Exception("Audit telah di-submit, foto tidak bisa dihapus.");
                 }
 
-                $absolutePath = public_path($photo->cphoto_path);
+                $path = $photo->cphoto_path;
+                if (!str_starts_with($path, 'uploads/')) {
+                    $path = 'uploads/' . ltrim($path, '/');
+                }
+                $absolutePath = public_path($path);
+
                 if (File::exists($absolutePath)) {
                     File::delete($absolutePath);
                 }
@@ -327,6 +352,65 @@ class AuditReportController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ], 400);
+        }
+    }
+
+    /**
+     * Send email with PDF report
+     */
+    public function sendEmail(Request $request)
+    {
+        $request->validate([
+            'audit_id' => 'required|integer',
+            'recipient' => 'required|email|max:254',
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            ini_set('memory_limit', '512M');
+            set_time_limit(300);
+
+            $data = $this->auditService->getDetail($request->audit_id);
+
+            $audit = $data['audit'];
+            if ($audit['status'] !== 'Submitted') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dokumen belum selesai.'
+                ], 400);
+            }
+
+            // Generate PDF
+            $pdf = Pdf::loadView('audit.pdf-report', $data);
+            $pdf->render();
+            $canvas = $pdf->getDomPDF()->getCanvas();
+            $canvas->page_text(
+                530,
+                815,
+                "{PAGE_NUM} / {PAGE_COUNT}",
+                null,
+                8,
+                [0.27, 0.27, 0.27]
+            );
+
+            $pdfData = $pdf->output();
+            $fileName = 'audit_' . $audit['document_id'] . '.pdf';
+            $reportName = 'Laporan Audit - ' . $audit['document_id'];
+
+            // Send Email
+            Mail::to($request->recipient)->send(
+                new ReportMail($pdfData, $fileName, $reportName, $request->message)
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email berhasil dikirim.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email gagal dikirim: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
