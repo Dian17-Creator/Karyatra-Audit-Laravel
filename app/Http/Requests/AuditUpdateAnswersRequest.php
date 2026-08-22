@@ -14,7 +14,7 @@ class AuditUpdateAnswersRequest extends FormRequest
     public function rules()
     {
         return [
-            'audit_id' => 'required|integer|exists:maudit_audits,nid',
+            'audit_id' => 'required|integer|exists:maudit,nid',
             'answers' => 'required|array',
             'answers.*.question_id' => 'required|integer|exists:maudit_quest,nid',
             'answers.*.score' => 'nullable|numeric|min:0|max:2',

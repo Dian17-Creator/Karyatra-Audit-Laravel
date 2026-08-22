@@ -14,7 +14,7 @@ class AuditSubmitRequest extends FormRequest
     public function rules()
     {
         return [
-            'audit_id' => 'required|integer|exists:maudit_audits,nid',
+            'audit_id' => 'required|integer|exists:maudit,nid',
             'auditee_name' => 'required|string|max:150',
             'verification_photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:8192'
         ];
