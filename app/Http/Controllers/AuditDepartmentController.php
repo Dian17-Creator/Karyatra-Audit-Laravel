@@ -66,7 +66,7 @@ class AuditDepartmentController extends Controller
             $formattedQuestions = $catQuestions->map(function ($q) use ($linkedQuestionIds) {
                 return [
                     'id'       => $q->nid,
-                    'question' => $q->cquest,
+                    'question' => $q->ctanya,
                     'linked'   => in_array($q->nid, $linkedQuestionIds),
                 ];
             });
