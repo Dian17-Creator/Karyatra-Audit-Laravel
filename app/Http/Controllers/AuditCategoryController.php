@@ -51,9 +51,35 @@ class AuditCategoryController extends Controller
             ], 422);
         }
 
+        $cperusahaan = $request->input('cperusahaan') 
+            ?? $request->input('company');
+
+        if (empty($cperusahaan)) {
+            $user = auth()->user() ?? auth('api')->user();
+            
+            $userId = $request->input('user_id') 
+                ?? $request->input('auditor_id') 
+                ?? $request->input('nid_auditor')
+                ?? $request->input('nid_user');
+
+            if (!$user && $userId) {
+                $user = \App\Models\Auth\Muser::find($userId);
+            }
+
+            if ($user) {
+                $cperusahaan = $user->cperusahaan ?? $user->ccompany;
+            }
+        }
+
+        if (empty($cperusahaan)) {
+            $firstUser = \App\Models\Auth\Muser::whereNotNull('cperusahaan')->first();
+            $cperusahaan = $firstUser ? $firstUser->cperusahaan : 'Default';
+        }
+
         $category = MkatTanya::create([
             'cnama' => $request->name,
             'cket' => $request->description,
+            'cperusahaan' => $cperusahaan,
             'created_at' => now(),
         ]);
 
