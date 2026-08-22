@@ -60,7 +60,7 @@ class MauditInventory extends Model
     public function auditor()
     {
         return $this->belongsTo(
-            muser::class,
+            Muser::class,
             'nid_auditor',
             'nid'
         );

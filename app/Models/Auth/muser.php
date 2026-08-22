@@ -10,7 +10,7 @@ class Muser extends Authenticatable
 {
     use HasFactory;
 
-    protected $table = 'muser';
+    protected $table = 'Muser';
     protected $primaryKey = 'nid';
     public $timestamps = false;
 
@@ -110,4 +110,3 @@ class Muser extends Authenticatable
         return in_array($this->clevel, ['admin', 'audit']);
     }
 }
-

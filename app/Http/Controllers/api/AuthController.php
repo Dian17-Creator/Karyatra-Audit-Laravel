@@ -88,7 +88,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email'        => 'required|email|unique:muser,cemail',
+            'email'        => 'required|email|unique:Muser,cemail',
             'namalengkap'  => 'required|string|max:255',
             'password'     => 'required|string|min:6',
             'perusahaan'   => 'nullable|string|max:255',
@@ -184,4 +184,3 @@ class AuthController extends Controller
         ]);
     }
 }
-
