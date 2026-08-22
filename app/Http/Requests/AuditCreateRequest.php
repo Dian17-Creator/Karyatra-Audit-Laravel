@@ -15,7 +15,7 @@ class AuditCreateRequest extends FormRequest
     {
         return [
             'department_id' => 'required|integer|exists:mdepartemen,nid',
-            'auditor_id' => 'nullable|integer|exists:Muser,nid'
+            'auditor_id' => 'nullable|integer|exists:muser,nid'
         ];
     }
 }
