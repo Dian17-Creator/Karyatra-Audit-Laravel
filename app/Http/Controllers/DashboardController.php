@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $recentActivity = $recentAudits->map(function ($audit) {
             return [
                 'id' => $audit->nid,
-                'title' => 'Audit ' . ($audit->department->cname ?? 'Departemen'),
+                'title' => 'Audit ' . ($audit->department->cnama ?? 'Departemen'),
                 'subtitle' => $audit->cdocid . ' • ' . ($audit->daudit ? $audit->daudit->format('d M Y') : '-'),
                 'status' => $audit->cstatus
             ];
@@ -48,7 +48,7 @@ class DashboardController extends Controller
         $recentStockOpname = $recentOpnames->map(function ($opname) {
             return [
                 'id' => $opname->nid,
-                'title' => 'Stok Opname ' . ($opname->department->cname ?? 'Departemen'),
+                'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
                 'subtitle' => $opname->cdocid . ' • ' . ($opname->daudit ? $opname->daudit->format('d M Y') : '-'),
                 'status' => $opname->cstatus
             ];

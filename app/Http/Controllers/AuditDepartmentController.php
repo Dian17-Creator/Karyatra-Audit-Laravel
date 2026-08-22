@@ -21,8 +21,8 @@ class AuditDepartmentController extends Controller
      */
     public function index(): JsonResponse
     {
-        $departments = Mdepartemen::select('nid as id', 'cname as name')
-            ->orderBy('cname')
+        $departments = Mdepartemen::select('nid as id', 'cnama as name')
+            ->orderBy('cnama')
             ->get();
 
         return response()->json([
@@ -83,7 +83,7 @@ class AuditDepartmentController extends Controller
             'data'    => [
                 'department' => [
                     'id'   => $department->nid,
-                    'name' => $department->cname,
+                    'name' => $department->cnama,
                 ],
                 'categories' => $formattedCategories,
             ],

@@ -25,9 +25,9 @@ class StockDepartmentController extends Controller
     {
         $departments = Mdepartemen::select(
             'nid as id',
-            'cname as name'
+            'cnama as name'
         )
-            ->orderBy('cname')
+            ->orderBy('cnama')
             ->get();
 
         return response()->json([
@@ -117,7 +117,7 @@ class StockDepartmentController extends Controller
             'data' => [
                 'department' => [
                     'id' => $department->nid,
-                    'name' => $department->cname,
+                    'name' => $department->cnama,
                 ],
                 'categories' => $formattedCategories,
             ],
@@ -254,7 +254,7 @@ class StockDepartmentController extends Controller
                 'data' => [
                     'department' => [
                         'id' => $department->nid,
-                        'name' => $department->cname,
+                        'name' => $department->cnama,
                     ],
                     'item_ids' => $savedItemIds,
                     'total_items' => count($savedItemIds),

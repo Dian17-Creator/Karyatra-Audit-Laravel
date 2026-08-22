@@ -18,7 +18,7 @@ class Mdepartemen extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'cname',
+        'cnama',
         'dcreated',
         'cperusahaan',
     ];

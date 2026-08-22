@@ -97,7 +97,7 @@ class StockReportService
             'id' => $audit->nid,
             'document_id' => $audit->cdocid,
             'department_id' => $audit->nid_dept,
-            'department_name' => $audit->department ? $audit->department->cname : null,
+            'department_name' => $audit->department ? $audit->department->cnama : null,
             'auditor_id' => $audit->nid_auditor,
             'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
             'audit_date' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
@@ -129,7 +129,7 @@ class StockReportService
 
             $department = Mdepartemen::findOrFail($departmentId);
 
-            $deptName = strtolower(trim($department->cname));
+            $deptName = strtolower(trim($department->cnama));
             $deptName = preg_replace("/[^a-z0-9]+/", "_", $deptName);
             $deptName = trim($deptName, "_");
 
@@ -261,7 +261,7 @@ class StockReportService
                 'id' => $audit->nid,
                 'document_id' => $audit->cdocid,
                 'department_id' => $audit->nid_dept,
-                'department_name' => $audit->department ? $audit->department->cname : null,
+                'department_name' => $audit->department ? $audit->department->cnama : null,
                 'auditor_id' => $audit->nid_auditor,
                 'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
                 'status' => $audit->cstatus,
