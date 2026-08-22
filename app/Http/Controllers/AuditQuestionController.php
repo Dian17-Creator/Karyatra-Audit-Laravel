@@ -28,7 +28,7 @@ class AuditQuestionController extends Controller
                 return [
                     'id'          => $item->nid,
                     'category_id' => $item->nid_kat,
-                    'question'    => $item->cquest,
+                    'question'    => $item->ctanya,
                     'sequence'    => $item->nurut,
                     'active'      => $item->factive,
                     'created_at'  => $item->created_at,
@@ -71,7 +71,7 @@ class AuditQuestionController extends Controller
 
             $question = Mtanya::create([
                 'nid_kat'    => $request->category_id,
-                'cquest'     => $request->question,
+                'ctanya'     => $request->question,
                 'nurut'  => $nextSequence,
                 'factive'    => 1,
                 'created_at' => now(),
@@ -85,7 +85,7 @@ class AuditQuestionController extends Controller
                 'data'    => [
                     'id'          => $question->nid,
                     'category_id' => $question->nid_kat,
-                    'question'    => $question->cquest,
+                    'question'    => $question->ctanya,
                     'sequence'    => $question->nurut,
                     'active'      => $question->factive,
                     'created_at'  => $question->created_at,
@@ -153,7 +153,7 @@ class AuditQuestionController extends Controller
             'data'    => [
                 'id'          => $question->nid,
                 'category_id' => $question->nid_kat,
-                'question'    => $question->cquest,
+                'question'    => $question->ctanya,
                 'sequence'    => $question->nurut,
                 'active'      => $question->factive,
                 'created_at'  => $question->created_at,
