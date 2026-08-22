@@ -31,7 +31,7 @@ class AuditReportService
                 'nid' => $audit->nid,
                 'cdocid' => $audit->cdocid,
                 'nid_dept' => $audit->nid_dept,
-                'department_name' => $audit->department->cname ?? '-',
+                'department_name' => $audit->department->cnama ?? '-',
                 'cstatus' => $audit->cstatus,
                 'daudit' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
                 'created_at' => $audit->started_at
@@ -113,7 +113,7 @@ class AuditReportService
                 'document_id' => $audit->cdocid,
                 'status' => $audit->cstatus,
                 'audit_date' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
-                'department_name' => $audit->department ? $audit->department->cname : null,
+                'department_name' => $audit->department ? $audit->department->cnama : null,
                 'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
                 'total_score' => (float) $audit->ntotnilai,
                 'max_score' => (float) $audit->nnilaimax,
@@ -146,7 +146,7 @@ class AuditReportService
             $department = Mdepartemen::findOrFail($departmentId);
 
             // Generate Document ID
-            $deptName = strtolower(trim($department->cname));
+            $deptName = strtolower(trim($department->cnama));
             $deptName = preg_replace("/[^a-z0-9]+/", "_", $deptName);
             $deptName = trim($deptName, "_");
 
