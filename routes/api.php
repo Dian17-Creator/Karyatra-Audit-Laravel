@@ -12,6 +12,9 @@ use App\Http\Controllers\StockDepartmentController;
 use App\Http\Controllers\StockReportController;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::get('/me', [AuthController::class, 'me']);
+
 
 //dashboard controller
 Route::get('/dashboard/summary', [DashboardController::class, 'summary']);

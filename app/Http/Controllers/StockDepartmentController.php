@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-use App\Models\Auth\mdepartment;
+use App\Models\Auth\Mdepartemen;
 use App\Models\Stock\MauditItem;
 use App\Models\Stock\MauditItemgrp;
 use App\Models\Stock\MauditDeptItem;
@@ -23,7 +23,7 @@ class StockDepartmentController extends Controller
      */
     public function index(): JsonResponse
     {
-        $departments = mdepartment::select(
+        $departments = Mdepartemen::select(
             'nid as id',
             'cname as name'
         )
@@ -44,7 +44,7 @@ class StockDepartmentController extends Controller
      */
     public function mapping($id): JsonResponse
     {
-        $department = mdepartment::find($id);
+        $department = Mdepartemen::find($id);
 
         if (!$department) {
             return response()->json([
@@ -135,7 +135,7 @@ class StockDepartmentController extends Controller
          * Validasi request.
          */
         $validator = Validator::make($request->all(), [
-            'department_id' => 'required|integer|exists:mdepartment,nid',
+            'department_id' => 'required|integer|exists:Mdepartemen,nid',
 
             'item_ids' => 'nullable|array',
 
@@ -199,7 +199,7 @@ class StockDepartmentController extends Controller
             /*
              * Pastikan department masih ada.
              */
-            $department = mdepartment::find($departmentId);
+            $department = Mdepartemen::find($departmentId);
 
             if (!$department) {
                 DB::rollBack();

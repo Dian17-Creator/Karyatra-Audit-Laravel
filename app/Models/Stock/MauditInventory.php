@@ -4,8 +4,8 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Auth\mdepartment;
-use App\Models\Auth\muser;
+use App\Models\Auth\Mdepartemen;
+use App\Models\Auth\Muser;
 
 class MauditInventory extends Model
 {
@@ -48,7 +48,7 @@ class MauditInventory extends Model
     public function department()
     {
         return $this->belongsTo(
-            mdepartment::class,
+            Mdepartemen::class,
             'nid_dept',
             'nid'
         );

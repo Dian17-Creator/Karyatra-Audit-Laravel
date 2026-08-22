@@ -11,9 +11,9 @@ use App\Http\Requests\AuditSubmitRequest;
 use App\Http\Requests\AuditUpdateAnswersRequest;
 use App\Http\Requests\AuditUpdatePhotoRequest;
 use App\Http\Requests\AuditUploadPhotoRequest;
-use App\Models\Audit\MauditAudit;
-use App\Models\Audit\MauditFoto;
-use App\Models\Audit\MauditResponses;
+use App\Models\Audit\Maudit;
+use App\Models\Audit\TauditFoto;
+use App\Models\Audit\TauditHasil;
 use App\Services\AuditReportService;
 use App\Services\ImageUploadService;
 use App\Mail\ReportMail;
@@ -169,7 +169,7 @@ class AuditReportController extends Controller
     public function submit(AuditSubmitRequest $request)
     {
         try {
-            $audit = MauditAudit::findOrFail($request->audit_id);
+            $audit = Maudit::findOrFail($request->audit_id);
             $cdocid = $audit->cdocid;
 
             $photo = $request->file('verification_photo');
@@ -219,16 +219,16 @@ class AuditReportController extends Controller
             $responseId = $request->response_id;
 
             return DB::transaction(function () use ($request, $responseId) {
-                $responseInfo = MauditResponses::with(['audit', 'question'])->findOrFail($responseId);
+                $responseInfo = TauditHasil::with(['audit', 'question'])->findOrFail($responseId);
                 $audit = $responseInfo->audit;
                 $question = $responseInfo->question;
 
-                $photoCount = MauditFoto::where('nid_resp', $responseId)->count();
+                $photoCount = TauditFoto::where('nid_hasil', $responseId)->count();
                 if ($photoCount >= 10) {
                     throw new Exception("Maksimal 10 foto.");
                 }
 
-                $nextSequence = MauditFoto::where('nid_resp', $responseId)->max('nsequence') + 1;
+                $nextSequence = TauditFoto::where('nid_hasil', $responseId)->max('nurut') + 1;
 
                 $uploadDir = public_path('uploads/' . $audit->cdocid);
                 if (!File::isDirectory($uploadDir)) {
@@ -246,11 +246,11 @@ class AuditReportController extends Controller
                     $request->file('photo')->getMimeType()
                 );
 
-                $photo = MauditFoto::create([
-                    'nid_resp' => $responseId,
-                    'nsequence' => $nextSequence,
+                $photo = TauditFoto::create([
+                    'nid_hasil' => $responseId,
+                    'nurut' => $nextSequence,
                     'cket' => $request->cket,
-                    'caction' => $request->caction,
+                    'ctindakan' => $request->caction,
                     'cphoto_path' => $relativePath,
                     'uploaded_at' => now()
                 ]);
@@ -278,11 +278,11 @@ class AuditReportController extends Controller
     public function updatePhoto(AuditUpdatePhotoRequest $request)
     {
         try {
-            $photo = MauditFoto::findOrFail($request->id);
+            $photo = TauditFoto::findOrFail($request->id);
 
             $photo->update([
                 'cket' => $request->observation,
-                'caction' => $request->recommendation
+                'ctindakan' => $request->recommendation
             ]);
 
             return response()->json([
@@ -304,7 +304,7 @@ class AuditReportController extends Controller
     {
         try {
             return DB::transaction(function () use ($request) {
-                $photo = MauditFoto::with('response.audit')->findOrFail($request->photo_id);
+                $photo = TauditFoto::with('response.audit')->findOrFail($request->photo_id);
 
                 if ($photo->response->audit->cstatus === 'Submitted') {
                     throw new Exception("Audit telah di-submit, foto tidak bisa dihapus.");

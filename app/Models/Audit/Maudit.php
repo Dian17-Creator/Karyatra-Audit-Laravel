@@ -2,16 +2,16 @@
 
 namespace App\Models\Audit;
 
-use App\Models\Auth\mdepartment;
-use App\Models\Auth\muser;
+use App\Models\Auth\Mdepartemen;
+use App\Models\Auth\Muser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditAudit extends Model
+class Maudit extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_audits';
+    protected $table = 'maudit';
 
     protected $primaryKey = 'nid';
 
@@ -49,7 +49,7 @@ class MauditAudit extends Model
      */
     public function department()
     {
-        return $this->belongsTo(mdepartment::class, 'nid_dept', 'nid');
+        return $this->belongsTo(Mdepartemen::class, 'nid_dept', 'nid');
     }
 
     /**
@@ -65,6 +65,6 @@ class MauditAudit extends Model
      */
     public function responses()
     {
-        return $this->hasMany(MauditResponses::class, 'nid_audit', 'nid');
+        return $this->hasMany(TauditHasil::class, 'nid_audit', 'nid');
     }
 }

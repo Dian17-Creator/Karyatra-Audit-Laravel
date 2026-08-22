@@ -5,11 +5,11 @@ namespace App\Models\Audit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditResponses extends Model
+class TauditHasil extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_responses';
+    protected $table = 'taudit_hasil';
 
     protected $primaryKey = 'nid';
 
@@ -17,6 +17,7 @@ class MauditResponses extends Model
 
     protected $fillable = [
         'nid_audit',
+        'nid_tanya',
         'nid_quest',
         'nnilai',
         'fna',
@@ -26,18 +27,29 @@ class MauditResponses extends Model
 
     protected $casts = [
         'nid_audit'  => 'integer',
-        'nid_quest'  => 'integer',
+        'nid_tanya'  => 'integer',
         'nnilai'     => 'decimal:1',
         'fna'        => 'boolean',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    public function getNidQuestAttribute()
+    {
+        return $this->nid_tanya ?? ($this->attributes['nid_quest'] ?? null);
+    }
+
+    public function setNidQuestAttribute($value)
+    {
+        $this->attributes['nid_tanya'] = $value;
+    }
+
 
     /**
      * Header Audit
      */
     public function audit()
     {
-        return $this->belongsTo(MauditAudit::class, 'nid_audit', 'nid');
+        return $this->belongsTo(Maudit::class, 'nid_audit', 'nid');
     }
 
     /**
@@ -45,7 +57,7 @@ class MauditResponses extends Model
      */
     public function question()
     {
-        return $this->belongsTo(MauditQuest::class, 'nid_quest', 'nid');
+        return $this->belongsTo(Mtanya::class, 'nid_tanya', 'nid');
     }
 
     /**
@@ -53,6 +65,6 @@ class MauditResponses extends Model
      */
     public function photos()
     {
-        return $this->hasMany(MauditFoto::class, 'nid_resp', 'nid');
+        return $this->hasMany(TauditFoto::class, 'nid_hasil', 'nid');
     }
 }

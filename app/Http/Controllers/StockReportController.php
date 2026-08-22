@@ -24,7 +24,7 @@ class StockReportController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'department_id' => 'nullable|integer|exists:mdepartment,nid',
+            'department_id' => 'nullable|integer|exists:mdepartemen,nid',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
             'page' => 'nullable|integer|min:1',
@@ -71,7 +71,7 @@ class StockReportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'department_id' => 'required|integer|exists:mdepartment,nid'
+            'department_id' => 'required|integer|exists:mdepartemen,nid'
         ]);
 
         try {

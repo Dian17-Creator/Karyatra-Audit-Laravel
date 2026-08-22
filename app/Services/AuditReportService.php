@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Audit\MauditAudit;
-use App\Models\Audit\MauditFoto;
-use App\Models\Audit\MauditResponses;
-use App\Models\Audit\MauditQuest;
-use App\Models\Auth\mdepartment;
+use App\Models\Audit\Maudit;
+use App\Models\Audit\TauditFoto;
+use App\Models\Audit\TauditHasil;
+use App\Models\Audit\Mtanya;
+use App\Models\Auth\Mdepartemen;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Exception;
@@ -19,7 +19,7 @@ class AuditReportService
      */
     public function getList(int $departmentId, string $dateFrom, string $dateTo, int $perPage = 15)
     {
-        $audits = MauditAudit::with('department')
+        $audits = Maudit::with('department')
             ->where('nid_dept', $departmentId)
             ->whereBetween('daudit', [$dateFrom, $dateTo])
             ->orderBy('daudit', 'desc')
@@ -44,7 +44,7 @@ class AuditReportService
      */
     public function getDetail(int $auditId)
     {
-        $audit = MauditAudit::with([
+        $audit = Maudit::with([
             'department',
             'auditor',
             'responses.question.category',
@@ -114,7 +114,7 @@ class AuditReportService
                 'status' => $audit->cstatus,
                 'audit_date' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
                 'department_name' => $audit->department ? $audit->department->cname : null,
-                'auditor_name' => $audit->auditor ? $audit->auditor->cfullname : null,
+                'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
                 'total_score' => (float) $audit->ntotnilai,
                 'max_score' => (float) $audit->nnilaimax,
                 'percentage' => (float) $audit->npersen,
@@ -133,7 +133,7 @@ class AuditReportService
     {
         return DB::transaction(function () use ($departmentId, $auditorId) {
             // Check existing Draft/In Progress audit today
-            $existing = MauditAudit::where('nid_dept', $departmentId)
+            $existing = Maudit::where('nid_dept', $departmentId)
                 ->where('nid_auditor', $auditorId)
                 ->whereIn('cstatus', ['Draft', 'In Progress'])
                 ->orderBy('started_at', 'desc')
@@ -143,7 +143,7 @@ class AuditReportService
                 throw new Exception("Audit yang belum disubmit sudah ada untuk departemen ini.");
             }
 
-            $department = mdepartment::findOrFail($departmentId);
+            $department = Mdepartemen::findOrFail($departmentId);
 
             // Generate Document ID
             $deptName = strtolower(trim($department->cname));
@@ -151,11 +151,11 @@ class AuditReportService
             $deptName = trim($deptName, "_");
 
             $docPrefix = "audit_" . $deptName . "_" . date("Ymd");
-            $sequence = MauditAudit::where('cdocid', 'LIKE', $docPrefix . '_%')->count() + 1;
+            $sequence = Maudit::where('cdocid', 'LIKE', $docPrefix . '_%')->count() + 1;
             $cdocid = sprintf("%s_%03d", $docPrefix, $sequence);
 
             // Create Header
-            $audit = MauditAudit::create([
+            $audit = Maudit::create([
                 'cdocid' => $cdocid,
                 'nid_dept' => $departmentId,
                 'nid_auditor' => $auditorId,
@@ -164,8 +164,8 @@ class AuditReportService
             ]);
 
             // Create blank responses based on mapping
-            $questions = MauditQuest::whereHas('departments', function ($q) use ($departmentId) {
-                $q->where('mdepartment.nid', $departmentId);
+            $questions = Mtanya::whereHas('departments', function ($q) use ($departmentId) {
+                $q->where('mdepartemen.nid', $departmentId);
             })->get();
 
             if ($questions->isEmpty()) {
@@ -177,7 +177,7 @@ class AuditReportService
             foreach ($questions as $question) {
                 $responses[] = [
                     'nid_audit' => $audit->nid,
-                    'nid_quest' => $question->nid,
+                    'nid_tanya' => $question->nid,
                     'nnilai' => null,
                     'fna' => 0,
                     'cket' => null,
@@ -185,7 +185,7 @@ class AuditReportService
                 ];
             }
 
-            MauditResponses::insert($responses);
+            TauditHasil::insert($responses);
 
             return $audit;
         });
@@ -197,15 +197,18 @@ class AuditReportService
     public function updateAnswers(int $auditId, array $answers)
     {
         DB::transaction(function () use ($auditId, $answers) {
-            $audit = MauditAudit::findOrFail($auditId);
+            $audit = Maudit::findOrFail($auditId);
 
             if ($audit->cstatus === 'Submitted') {
                 throw new Exception("Audit sudah disubmit, tidak bisa diubah.");
             }
 
             foreach ($answers as $answer) {
-                MauditResponses::where('nid_audit', $auditId)
-                    ->where('nid_quest', $answer['question_id'])
+                TauditHasil::where('nid_audit', $auditId)
+                    ->where(function ($q) use ($answer) {
+                        $q->where('nid_tanya', $answer['question_id'])
+                          ->orWhere('nid_tanya', $answer['question_id']);
+                    })
                     ->update([
                         'nnilai' => isset($answer['score']) ? $answer['score'] : null,
                         'fna' => isset($answer['is_na']) && $answer['is_na'] ? 1 : 0,
@@ -226,14 +229,14 @@ class AuditReportService
     public function submitAudit(int $auditId, string $auditeeName, string $verificationPhotoPath)
     {
         return DB::transaction(function () use ($auditId, $auditeeName, $verificationPhotoPath) {
-            $audit = MauditAudit::findOrFail($auditId);
+            $audit = Maudit::findOrFail($auditId);
 
             if ($audit->cstatus === 'Submitted') {
                 throw new Exception("Audit sudah selesai.");
             }
 
             // Validasi wajib jawab
-            $unansweredCount = MauditResponses::where('nid_audit', $auditId)
+            $unansweredCount = TauditHasil::where('nid_audit', $auditId)
                 ->where('fna', 0)
                 ->whereNull('nnilai')
                 ->count();
@@ -243,8 +246,8 @@ class AuditReportService
             }
 
             // Hitung Score
-            $totalScore = MauditResponses::where('nid_audit', $auditId)->sum('nnilai');
-            $maxScore = MauditResponses::where('nid_audit', $auditId)->count() * 2;
+            $totalScore = TauditHasil::where('nid_audit', $auditId)->sum('nnilai');
+            $maxScore = TauditHasil::where('nid_audit', $auditId)->count() * 2;
 
             $percentage = $maxScore > 0 ? round(($totalScore / $maxScore) * 100, 2) : 0;
 
@@ -268,23 +271,23 @@ class AuditReportService
     public function deleteAudit(int $auditId)
     {
         DB::transaction(function () use ($auditId) {
-            $audit = MauditAudit::lockForUpdate()->findOrFail($auditId);
+            $audit = Maudit::lockForUpdate()->findOrFail($auditId);
 
             if ($audit->cstatus === 'Submitted') {
                 throw new Exception("Audit selesai, tidak bisa dihapus.");
             }
 
             // Ambil semua foto terkait
-            $photoPaths = MauditFoto::whereHas('response', function ($q) use ($auditId) {
+            $photoPaths = TauditFoto::whereHas('response', function ($q) use ($auditId) {
                 $q->where('nid_audit', $auditId);
             })->pluck('cphoto_path')->toArray();
 
             // Hapus tabel secara berurutan
-            MauditFoto::whereHas('response', function ($q) use ($auditId) {
+            TauditFoto::whereHas('response', function ($q) use ($auditId) {
                 $q->where('nid_audit', $auditId);
             })->delete();
 
-            MauditResponses::where('nid_audit', $auditId)->delete();
+            TauditHasil::where('nid_audit', $auditId)->delete();
             $audit->delete();
 
             // Hapus file fisik
