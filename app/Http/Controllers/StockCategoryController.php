@@ -13,7 +13,6 @@ class StockCategoryController extends Controller
 {
     /**
      * GET /api/stock/categories
-     * Mengambil data pohon hierarki (kategori beserta barang di dalamnya)
      */
     public function index()
     {
@@ -67,14 +66,14 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $cperusahaan = $request->input('cperusahaan') 
+            $cperusahaan = $request->input('cperusahaan')
                 ?? $request->input('company');
 
             if (empty($cperusahaan)) {
                 $user = auth()->user() ?? $request->user();
-                
-                $userId = $request->input('user_id') 
-                    ?? $request->input('auditor_id') 
+
+                $userId = $request->input('user_id')
+                    ?? $request->input('auditor_id')
                     ?? $request->input('nid_auditor')
                     ?? $request->input('nid_user');
 
