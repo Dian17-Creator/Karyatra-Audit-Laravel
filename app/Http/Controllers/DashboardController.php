@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Audit\Maudit;
 use App\Models\Audit\MkatTanya;
 use App\Models\Audit\Mtanya;
-use App\Models\Stock\MauditItemgrp;
-use App\Models\Stock\MauditItem;
-use App\Models\Stock\MauditInventory;
+use App\Models\Stock\MkatBarang;
+use App\Models\Stock\Mbarang;
+use App\Models\Stock\Mopname;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
@@ -21,9 +21,9 @@ class DashboardController extends Controller
         $totalAudit = Maudit::count();
 
         // Stock Stats
-        // $totalKategoriStok = MauditItemgrp::count();
-        // $totalBarang = MauditItem::count();
-        // $totalStokOpname = MauditInventory::count();
+        $totalKategoriStok = MkatBarang::count();
+        $totalBarang = Mbarang::count();
+        $totalStokOpname = Mopname::count();
 
         $recentAudits = Maudit::with('department')
             ->orderBy('nid', 'desc')
@@ -44,23 +44,23 @@ class DashboardController extends Controller
         });
 
         // Recent Stock Opname
-        // $recentOpnames = MauditInventory::with('department')
-        //     ->orderBy('nid', 'desc')
-        //     ->take(5)
-        //     ->get();
+        $recentOpnames = Mopname::with('department')
+            ->orderBy('nid', 'desc')
+            ->take(5)
+            ->get();
 
-        // $recentStockOpname = $recentOpnames->map(function ($opname) {
-        //     $dateStr = '-';
-        //     if ($opname->daudit) {
-        //         $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
-        //     }
-        //     return [
-        //         'id' => $opname->nid,
-        //         'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
-        //         'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
-        //         'status' => $opname->cstatus ?? 'Draft'
-        //     ];
-        // });
+        $recentStockOpname = $recentOpnames->map(function ($opname) {
+            $dateStr = '-';
+            if ($opname->daudit) {
+                $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
+            }
+            return [
+                'id' => $opname->nid,
+                'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
+                'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
+                'status' => $opname->cstatus ?? 'Draft'
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -69,11 +69,11 @@ class DashboardController extends Controller
                 'total_kategori'   => $totalKategori,
                 'total_pertanyaan' => $totalPertanyaan,
                 'total_audit'      => $totalAudit,
-                // 'total_kategori_stok' => $totalKategoriStok,
-                // 'total_barang'     => $totalBarang,
-                // 'total_stok_opname' => $totalStokOpname,
+                'total_kategori_stok' => $totalKategoriStok,
+                'total_barang'     => $totalBarang,
+                'total_stok_opname' => $totalStokOpname,
                 'recent_activity'  => $recentActivity,
-                // 'recent_stock_opname' => $recentStockOpname
+                'recent_stock_opname' => $recentStockOpname
             ]
         ]);
     }

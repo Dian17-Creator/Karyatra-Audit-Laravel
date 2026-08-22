@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Auth\Mdepartemen;
 use App\Models\Auth\Muser;
 
-class MauditInventory extends Model
+class Mopname extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_inventory';
+    protected $table = 'mopname';
 
     protected $primaryKey = 'nid';
 

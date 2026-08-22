@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Stock\Mbarang;
 
-class MauditInvresp extends Model
+class TopnameHasil extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_invresp';
+    protected $table = 'topname_hasil';
 
     protected $primaryKey = 'nid';
 
