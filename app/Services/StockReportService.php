@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Stock\MauditInventory;
-use App\Models\Stock\MauditInvresp;
-use App\Models\Stock\MauditInvFoto;
+use App\Models\Stock\Mopname;
+use App\Models\Stock\TopnameHasil;
+use App\Models\Stock\TopnameFoto;
 use App\Models\Auth\Mdepartemen;
-use App\Models\Stock\MauditDeptItem;
-use App\Models\Stock\MauditItem;
+use App\Models\Stock\TdeptBarang;
+use App\Models\Stock\Mbarang;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Carbon\Carbon;
@@ -32,7 +32,7 @@ class StockReportService
         ?int $auditorId = null,
         ?int $page = null
     ) {
-        $query = MauditInventory::with([
+        $query = Mopname::with([
             'department',
             'auditor'
         ])
@@ -91,7 +91,7 @@ class StockReportService
         ];
     }
 
-    private function formatHistoryItem(MauditInventory $audit)
+    private function formatHistoryItem(Mopname $audit)
     {
         return [
             'id' => $audit->nid,
@@ -112,7 +112,7 @@ class StockReportService
     public function startStockOpname(int $departmentId, int $auditorId)
     {
         return DB::transaction(function () use ($departmentId, $auditorId) {
-            $existing = MauditInventory::where('nid_dept', $departmentId)
+            $existing = Mopname::where('nid_dept', $departmentId)
                 ->where('nid_auditor', $auditorId)
                 ->where('cstatus', '<>', 'Submitted')
                 ->orderBy('started_at', 'desc')
@@ -134,10 +134,10 @@ class StockReportService
             $deptName = trim($deptName, "_");
 
             $docPrefix = "stok_" . $deptName . "_" . date("Ymd");
-            $sequence = MauditInventory::where('cdocid', 'LIKE', $docPrefix . '_%')->count() + 1;
+            $sequence = Mopname::where('cdocid', 'LIKE', $docPrefix . '_%')->count() + 1;
             $cdocid = sprintf("%s_%03d", $docPrefix, $sequence);
 
-            $audit = MauditInventory::create([
+            $audit = Mopname::create([
                 'cdocid' => $cdocid,
                 'nid_dept' => $departmentId,
                 'nid_auditor' => $auditorId,
@@ -146,7 +146,7 @@ class StockReportService
                 'started_at' => Carbon::now()
             ]);
 
-            $items = MauditDeptItem::where('nid_dept', $departmentId)->pluck('nid_item');
+            $items = TdeptBarang::where('nid_dept', $departmentId)->pluck('nid_barang');
 
             if ($items->isEmpty()) {
                 throw new Exception("Tidak ada daftar barang untuk departemen ini.");
@@ -156,20 +156,20 @@ class StockReportService
             $now = Carbon::now();
             foreach ($items as $itemId) {
                 $responses[] = [
-                    'nid_audit' => $audit->nid,
-                    'nid_item' => $itemId,
+                    'nid_opname' => $audit->nid,
+                    'nid_barang' => $itemId,
                     'nqty_stock' => null,
                     'nqty_real' => null,
-                    'ndiff' => 0,
-                    'ndiff_under' => 0,
-                    'ndiff_over' => 0,
+                    'nselisih' => 0,
+                    'nsel_kurang' => 0,
+                    'nsel_lebih' => 0,
                     'fna' => 0,
                     'cket' => null,
                     'updated_at' => $now
                 ];
             }
 
-            MauditInvresp::insert($responses);
+            TopnameHasil::insert($responses);
 
             return [
                 'id' => $audit->nid,
@@ -182,17 +182,17 @@ class StockReportService
 
     public function getDetail(int $auditId)
     {
-        $audit = MauditInventory::with(['department', 'auditor'])
+        $audit = Mopname::with(['department', 'auditor'])
             ->where('nid', $auditId)
             ->firstOrFail();
 
-        $responses = MauditInvresp::with(['item.group'])
-            ->where('nid_audit', $audit->nid)
+        $responses = TopnameHasil::with(['item.group'])
+            ->where('nid_opname', $audit->nid)
             ->get();
 
-        $photos = MauditInvFoto::whereIn('nid_resp', $responses->pluck('nid'))
+        $photos = TopnameFoto::whereIn('nid_hasil', $responses->pluck('nid'))
             ->get()
-            ->groupBy('nid_resp');
+            ->groupBy('nid_hasil');
 
         $categoriesMap = [];
 
@@ -219,26 +219,26 @@ class StockReportService
                 }
                 return [
                     'id' => $photo->nid,
-                    'response_id' => $photo->nid_resp,
-                    'sequence' => $photo->nsequence,
+                    'response_id' => $photo->nid_hasil,
+                    'sequence' => $photo->nurut,
                     'photo_path' => asset($path),
                     'remark' => $photo->cket,
-                    'action' => $photo->caction,
+                    'action' => null,
                     'uploaded_at' => $photo->uploaded_at ? $photo->uploaded_at->format('Y-m-d H:i:s') : null
                 ];
             })->toArray() : [];
 
             $categoriesMap[$categoryId]['items'][] = [
                 'id' => $item->nid,
-                'name' => $item->citemname,
-                'sequence' => $item->nsequence,
+                'name' => $item->cbarang,
+                'sequence' => $item->nurut,
                 'response' => [
                     'id' => $response->nid,
                     'qty_stock' => $response->nqty_stock !== null ? (float) $response->nqty_stock : null,
                     'qty_real' => $response->nqty_real !== null ? (float) $response->nqty_real : null,
-                    'diff' => (float) $response->ndiff,
-                    'diff_under' => (float) $response->ndiff_under,
-                    'diff_over' => (float) $response->ndiff_over,
+                    'diff' => (float) $response->nselisih,
+                    'diff_under' => (float) $response->nsel_kurang,
+                    'diff_over' => (float) $response->nsel_lebih,
                     'is_na' => (bool) $response->fna,
                     'remark' => $response->cket
                 ],
@@ -283,14 +283,14 @@ class StockReportService
         ?float $qtyReal,
         ?string $remark = null
     ) {
-        $audit = MauditInventory::where('nid', $auditId)->firstOrFail();
+        $audit = Mopname::where('nid', $auditId)->firstOrFail();
 
         if ($audit->cstatus === 'Submitted') {
-            throw new Exception("Audit sudah disubmit, tidak bisa diubah.", 403);
+            throw new Exception("Stok opname sudah disubmit, tidak bisa diubah.", 403);
         }
 
-        $response = MauditInvresp::where('nid_audit', $audit->nid)
-            ->where('nid_item', $itemId)
+        $response = TopnameHasil::where('nid_opname', $audit->nid)
+            ->where('nid_barang', $itemId)
             ->firstOrFail();
 
         $updateData = ['updated_at' => Carbon::now()];
@@ -319,20 +319,20 @@ class StockReportService
     public function uploadPhoto(int $responseId, UploadedFile $photo, ?string $remark = null)
     {
         return DB::transaction(function () use ($responseId, $photo, $remark) {
-            $responseInfo = MauditInvresp::findOrFail($responseId);
+            $responseInfo = TopnameHasil::findOrFail($responseId);
 
-            $audit = MauditInventory::where('nid', $responseInfo->nid_audit)->firstOrFail();
+            $audit = Mopname::where('nid', $responseInfo->nid_opname)->firstOrFail();
 
             if ($audit->cstatus === 'Submitted') {
-                throw new Exception("Audit sudah disubmit, tidak bisa mengunggah foto.", 403);
+                throw new Exception("Stok opname sudah disubmit, tidak bisa mengunggah foto.", 403);
             }
 
-            $photoCount = MauditInvFoto::where('nid_resp', $responseInfo->nid)->count();
+            $photoCount = TopnameFoto::where('nid_hasil', $responseInfo->nid)->count();
             if ($photoCount >= 5) {
                 throw new Exception("Maksimal 5 foto per barang.", 400);
             }
 
-            $nextSequence = MauditInvFoto::where('nid_resp', $responseInfo->nid)->max('nsequence') ?? 0;
+            $nextSequence = TopnameFoto::where('nid_hasil', $responseInfo->nid)->max('nurut') ?? 0;
             $nextSequence++;
 
             $uploadDir = public_path('uploads/' . $audit->cdocid);
@@ -340,8 +340,8 @@ class StockReportService
                 File::makeDirectory($uploadDir, 0775, true, true);
             }
 
-            $item = MauditItem::findOrFail($responseInfo->nid_item);
-            $groupId = $item->nid_grp;
+            $item = Mbarang::findOrFail($responseInfo->nid_barang);
+            $groupId = $item->nid_kat;
 
             $extension = 'jpg';
             $filename = $audit->cdocid . '_' . $groupId . '_' . $item->nid . '_' . $nextSequence . '.' . $extension;
@@ -355,11 +355,10 @@ class StockReportService
                 $photo->getMimeType()
             );
 
-            $photoRecord = MauditInvFoto::create([
-                'nid_resp' => $responseInfo->nid,
-                'nsequence' => $nextSequence,
+            $photoRecord = TopnameFoto::create([
+                'nid_hasil' => $responseInfo->nid,
+                'nurut' => $nextSequence,
                 'cket' => $remark,
-                'caction' => null,
                 'cphoto_path' => $relativePath,
                 'uploaded_at' => Carbon::now()
             ]);
@@ -373,13 +372,13 @@ class StockReportService
 
     public function updatePhoto(int $photoId, ?string $remark)
     {
-        $photo = MauditInvFoto::findOrFail($photoId);
-        $responseInfo = MauditInvresp::findOrFail($photo->nid_resp);
+        $photo = TopnameFoto::findOrFail($photoId);
+        $responseInfo = TopnameHasil::findOrFail($photo->nid_hasil);
 
-        $audit = MauditInventory::where('nid', $responseInfo->nid_audit)->firstOrFail();
+        $audit = Mopname::where('nid', $responseInfo->nid_opname)->firstOrFail();
 
         if ($audit->cstatus === 'Submitted') {
-            throw new Exception("Audit sudah disubmit, tidak bisa mengubah foto.", 403);
+            throw new Exception("Stok opname sudah disubmit, tidak bisa mengubah foto.", 403);
         }
 
         $photo->update(['cket' => $remark]);
@@ -390,13 +389,13 @@ class StockReportService
     public function deletePhoto(int $photoId)
     {
         return DB::transaction(function () use ($photoId) {
-            $photo = MauditInvFoto::findOrFail($photoId);
-            $responseInfo = MauditInvresp::findOrFail($photo->nid_resp);
+            $photo = TopnameFoto::findOrFail($photoId);
+            $responseInfo = TopnameHasil::findOrFail($photo->nid_hasil);
 
-            $audit = MauditInventory::where('nid', $responseInfo->nid_audit)->firstOrFail();
+            $audit = Mopname::where('nid', $responseInfo->nid_opname)->firstOrFail();
 
             if ($audit->cstatus === 'Submitted') {
-                throw new Exception("Audit telah di-submit, foto tidak bisa dihapus.", 403);
+                throw new Exception("Stok opname telah di-submit, foto tidak bisa dihapus.", 403);
             }
 
             $path = $photo->cphoto_path;
@@ -418,7 +417,7 @@ class StockReportService
     public function submitStockOpname(int $auditId, string $auditeeName, UploadedFile $verificationPhoto)
     {
         return DB::transaction(function () use ($auditId, $auditeeName, $verificationPhoto) {
-            $audit = MauditInventory::where('nid', $auditId)
+            $audit = Mopname::where('nid', $auditId)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -426,11 +425,11 @@ class StockReportService
                 throw new Exception("Stok opname sudah selesai.", 400);
             }
 
-            $missingItems = MauditInvresp::where('nid_audit', $audit->nid)
+            $missingItems = TopnameHasil::where('nid_opname', $audit->nid)
                 ->where(function ($query) {
                     $query->whereNull('nqty_stock')
                         ->orWhereNull('nqty_real');
-                })->pluck('nid_item');
+                })->pluck('nid_barang');
 
             if ($missingItems->isNotEmpty()) {
                 throw new HttpResponseException(
@@ -461,7 +460,7 @@ class StockReportService
                 $verificationPhoto->getMimeType()
             );
 
-            $responses = MauditInvresp::where('nid_audit', $audit->nid)->get();
+            $responses = TopnameHasil::where('nid_opname', $audit->nid)->get();
 
             foreach ($responses as $resp) {
                 $stock = (float) $resp->nqty_stock;
@@ -480,9 +479,9 @@ class StockReportService
                 }
 
                 $resp->update([
-                    'ndiff' => $diff,
-                    'ndiff_under' => $diffUnder,
-                    'ndiff_over' => $diffOver,
+                    'nselisih' => $diff,
+                    'nsel_kurang' => $diffUnder,
+                    'nsel_lebih' => $diffOver,
                     'updated_at' => Carbon::now()
                 ]);
             }
@@ -505,18 +504,18 @@ class StockReportService
     public function deleteStockOpname(int $auditId)
     {
         return DB::transaction(function () use ($auditId) {
-            $audit = MauditInventory::where('nid', $auditId)
+            $audit = Mopname::where('nid', $auditId)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             if ($audit->cstatus === 'Submitted') {
-                throw new Exception("Audit telah di-submit dan tidak bisa dihapus.", 403);
+                throw new Exception("Stok opname telah di-submit dan tidak bisa dihapus.", 403);
             }
 
-            $responses = MauditInvresp::where('nid_audit', $audit->nid)->get();
+            $responses = TopnameHasil::where('nid_opname', $audit->nid)->get();
             $responseIds = $responses->pluck('nid');
 
-            $photos = MauditInvFoto::whereIn('nid_resp', $responseIds)->get();
+            $photos = TopnameFoto::whereIn('nid_hasil', $responseIds)->get();
 
             foreach ($photos as $photo) {
                 $path = $photo->cphoto_path;
@@ -528,12 +527,12 @@ class StockReportService
                 if (File::exists($absolutePath)) {
                     File::delete($absolutePath);
                 }
-                
+
                 $photo->delete();
             }
 
-            MauditInvresp::whereIn('nid', $responseIds)->delete();
-            
+            TopnameHasil::whereIn('nid', $responseIds)->delete();
+
             $auditDir = public_path('uploads/' . $audit->cdocid);
             if (File::isDirectory($auditDir)) {
                 $files = File::files($auditDir);

@@ -22,11 +22,12 @@ class MkatBarang extends Model
     ];
 
     protected $casts = [
+        'nid' => 'integer',
         'created_at' => 'datetime',
     ];
 
     /**
-     * Relasi ke items.
+     * Relasi ke barang.
      */
     public function items()
     {

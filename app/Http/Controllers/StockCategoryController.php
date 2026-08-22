@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Stock\MauditItemgrp;
-use App\Models\Stock\MauditItem;
+use App\Models\Stock\MkatBarang;
+use App\Models\Stock\Mbarang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -18,8 +18,8 @@ class StockCategoryController extends Controller
     public function index()
     {
         try {
-            $categories = MauditItemgrp::with(['items' => function ($query) {
-                $query->orderBy('nsequence');
+            $categories = MkatBarang::with(['items' => function ($query) {
+                $query->orderBy('nurut');
             }])
                 ->orderBy('nid')
                 ->get()
@@ -31,9 +31,9 @@ class StockCategoryController extends Controller
                         'items' => $cat->items->map(function ($item) {
                             return [
                                 'id' => $item->nid,
-                                'category_id' => $item->nid_grp,
-                                'name' => $item->citemname,
-                                'sequence' => $item->nsequence,
+                                'category_id' => $item->nid_kat,
+                                'name' => $item->cbarang,
+                                'sequence' => $item->nurut,
                             ];
                         }),
                     ];
@@ -67,7 +67,7 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $category = MauditItemgrp::create([
+            $category = MkatBarang::create([
                 'cnama' => $request->cnama,
                 'cket' => $request->cket,
             ]);
@@ -107,7 +107,7 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $category = MauditItemgrp::find($nid);
+            $category = MkatBarang::find($nid);
 
             if (!$category) {
                 return response()->json([
@@ -155,7 +155,7 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $category = MauditItemgrp::find($nid);
+            $category = MkatBarang::find($nid);
 
             if (!$category) {
                 return response()->json([
@@ -165,10 +165,10 @@ class StockCategoryController extends Controller
             }
 
             // Validasi Transaksi: pastikan tidak ada barang di dalam kategori ini
-            // yang sudah pernah digunakan dalam transaksi audit/opname (maudit_invresp)
-            $isUsed = DB::table('maudit_items')
-                ->join('maudit_invresp', 'maudit_invresp.nid_item', '=', 'maudit_items.nid')
-                ->where('maudit_items.nid_grp', $nid)
+            // yang sudah pernah digunakan dalam transaksi opname (topname_hasil)
+            $isUsed = DB::table('mbarang')
+                ->join('topname_hasil', 'topname_hasil.nid_barang', '=', 'mbarang.nid')
+                ->where('mbarang.nid_kat', $nid)
                 ->exists();
 
             if ($isUsed) {
@@ -200,7 +200,7 @@ class StockCategoryController extends Controller
     public function getItems($categoryId)
     {
         try {
-            $category = MauditItemgrp::find($categoryId);
+            $category = MkatBarang::find($categoryId);
 
             if (!$category) {
                 return response()->json([
@@ -209,16 +209,16 @@ class StockCategoryController extends Controller
                 ], 404);
             }
 
-            $items = MauditItem::where('nid_grp', $categoryId)
-                ->orderBy('nsequence')
+            $items = Mbarang::where('nid_kat', $categoryId)
+                ->orderBy('nurut')
                 ->orderBy('nid')
                 ->get()
                 ->map(function ($item) {
                     return [
                         'id' => $item->nid,
-                        'category_id' => $item->nid_grp,
-                        'name' => $item->citemname,
-                        'sequence' => $item->nsequence,
+                        'category_id' => $item->nid_kat,
+                        'name' => $item->cbarang,
+                        'sequence' => $item->nurut,
                     ];
                 });
 
@@ -252,10 +252,10 @@ class StockCategoryController extends Controller
      */
     public function storeItem(Request $request)
     {
-        $nid_grp = $request->nid_grp;
-        $citemname = $request->citemname;
+        $nid_kat = $request->nid_kat ?? $request->nid_grp ?? $request->category_id;
+        $cbarang = $request->cbarang ?? $request->citemname ?? $request->name;
 
-        if (empty($nid_grp) || empty($citemname)) {
+        if (empty($nid_kat) || empty($cbarang)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kategori dan Nama barang harus diisi.'
@@ -263,7 +263,7 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $categoryExists = MauditItemgrp::where('nid', $nid_grp)->exists();
+            $categoryExists = MkatBarang::where('nid', $nid_kat)->exists();
             if (!$categoryExists) {
                 return response()->json([
                     'success' => false,
@@ -273,13 +273,13 @@ class StockCategoryController extends Controller
 
             DB::beginTransaction();
 
-            $maxSequence = MauditItem::where('nid_grp', $nid_grp)->max('nsequence') ?? 0;
-            $nsequence = $maxSequence + 1;
+            $maxSequence = Mbarang::where('nid_kat', $nid_kat)->max('nurut') ?? 0;
+            $nurut = $maxSequence + 1;
 
-            $item = MauditItem::create([
-                'nid_grp' => $nid_grp,
-                'citemname' => $citemname,
-                'nsequence' => $nsequence,
+            $item = Mbarang::create([
+                'nid_kat' => $nid_kat,
+                'cbarang' => $cbarang,
+                'nurut' => $nurut,
             ]);
 
             DB::commit();
@@ -289,9 +289,9 @@ class StockCategoryController extends Controller
                 'message' => 'Barang berhasil ditambahkan.',
                 'data' => [
                     'id' => $item->nid,
-                    'category_id' => $item->nid_grp,
-                    'name' => $item->citemname,
-                    'sequence' => $item->nsequence,
+                    'category_id' => $item->nid_kat,
+                    'name' => $item->cbarang,
+                    'sequence' => $item->nurut,
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -320,7 +320,7 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $item = MauditItem::find($nid);
+            $item = Mbarang::find($nid);
 
             if (!$item) {
                 return response()->json([
@@ -330,12 +330,12 @@ class StockCategoryController extends Controller
             }
 
             // Validasi Transaksi: pastikan barang belum pernah digunakan dalam opname
-            $isUsed = DB::table('maudit_invresp')->where('nid_item', $nid)->exists();
+            $isUsed = DB::table('topname_hasil')->where('nid_barang', $nid)->exists();
 
             if ($isUsed) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Barang tidak dapat dihapus karena sudah digunakan dalam audit.'
+                    'message' => 'Barang tidak dapat dihapus karena sudah digunakan dalam stok opname.'
                 ], 409);
             }
 
@@ -361,9 +361,9 @@ class StockCategoryController extends Controller
     public function reorderItems(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'category_id' => 'required|integer|exists:maudit_itemgrp,nid',
+            'category_id' => 'required|integer|exists:mkat_barang,nid',
             'item_ids' => 'required|array|min:1',
-            'item_ids.*' => 'required|integer|exists:maudit_items,nid',
+            'item_ids.*' => 'required|integer|exists:mbarang,nid',
         ]);
 
         if ($validator->fails()) {
@@ -378,7 +378,7 @@ class StockCategoryController extends Controller
         $itemIds = $request->item_ids;
 
         // Pastikan semua barang milik kategori yang dipilih
-        $count = MauditItem::where('nid_grp', $categoryId)
+        $count = Mbarang::where('nid_kat', $categoryId)
             ->whereIn('nid', $itemIds)
             ->count();
 
@@ -392,8 +392,8 @@ class StockCategoryController extends Controller
         DB::beginTransaction();
         try {
             foreach ($itemIds as $index => $itemId) {
-                MauditItem::where('nid', $itemId)->update([
-                    'nsequence' => $index + 1
+                Mbarang::where('nid', $itemId)->update([
+                    'nurut' => $index + 1
                 ]);
             }
             DB::commit();

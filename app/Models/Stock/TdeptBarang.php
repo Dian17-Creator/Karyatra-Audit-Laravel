@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Auth\Mdepartemen;
 use App\Models\Stock\Mbarang;
 
-class Tdeptbarang extends Model
+class TdeptBarang extends Model
 {
     use HasFactory;
 
@@ -29,6 +29,19 @@ class Tdeptbarang extends Model
         'nid_barang' => 'integer',
     ];
 
+    /**
+     * Accessor & Mutator untuk nid_item (legacy compatibility)
+     */
+    public function getNidItemAttribute()
+    {
+        return $this->nid_barang ?? ($this->attributes['nid_barang'] ?? null);
+    }
+
+    public function setNidItemAttribute($value)
+    {
+        $this->attributes['nid_barang'] = $value;
+    }
+
     public function department()
     {
         return $this->belongsTo(
@@ -39,6 +52,15 @@ class Tdeptbarang extends Model
     }
 
     public function item()
+    {
+        return $this->belongsTo(
+            Mbarang::class,
+            'nid_barang',
+            'nid'
+        );
+    }
+
+    public function barang()
     {
         return $this->belongsTo(
             Mbarang::class,
