@@ -21,8 +21,8 @@ class AuditDepartmentController extends Controller
      */
     public function index(): JsonResponse
     {
-        $departments = Mdepartemen::select('nid as id', 'cnama as name')
-            ->orderBy('cnama')
+        $departments = Mdepartemen::select('nid as id', 'cname as name')
+            ->orderBy('cname')
             ->get();
 
         return response()->json([
@@ -55,7 +55,7 @@ class AuditDepartmentController extends Controller
         $categories = MkatTanya::orderBy('cnama')->get();
 
         // Get all active questions ordered by sequence
-        $questions = Mtanya::active()->orderBy('nsequence')->get();
+        $questions = Mtanya::active()->orderBy('nurut')->get();
         $groupedQuestions = $questions->groupBy('nid_kat');
 
         $formattedCategories = [];
@@ -83,7 +83,7 @@ class AuditDepartmentController extends Controller
             'data'    => [
                 'department' => [
                     'id'   => $department->nid,
-                    'name' => $department->cnama,
+                    'name' => $department->cname,
                 ],
                 'categories' => $formattedCategories,
             ],
