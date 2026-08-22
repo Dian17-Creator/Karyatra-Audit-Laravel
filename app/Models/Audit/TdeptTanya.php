@@ -2,15 +2,15 @@
 
 namespace App\Models\Audit;
 
-use App\Models\Auth\mdepartment;
+use App\Models\Auth\Mdepartemen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditDeptQuest extends Model
+class TdeptTanya extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_deptquests';
+    protected $table = 'tdept_tanya';
 
     protected $primaryKey = 'nid_dept';
 
@@ -24,6 +24,6 @@ class MauditDeptQuest extends Model
 
     public function department()
     {
-        return $this->belongsTo(mdepartment::class, 'nid_dept', 'nid');
+        return $this->belongsTo(Mdepartemen::class, 'nid_dept', 'nid');
     }
 }

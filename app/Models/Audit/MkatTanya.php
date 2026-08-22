@@ -5,11 +5,11 @@ namespace App\Models\Audit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditKat extends Model
+class MkatTanya extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_kat';
+    protected $table = 'mkat_tanya';
 
     protected $primaryKey = 'nid';
 
@@ -18,6 +18,7 @@ class MauditKat extends Model
     protected $fillable = [
         'cnama',
         'cket',
+        'cperusahaan',
         'created_at',
     ];
 
@@ -29,6 +30,6 @@ class MauditKat extends Model
     //Daftar pertanyaan dalam kategori
     public function questions()
     {
-        return $this->hasMany(MauditQuest::class, 'nid_kat', 'nid');
+        return $this->hasMany(Mtanya::class, 'nid_kat', 'nid');
     }
 }

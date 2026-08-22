@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Audit\MauditAudit;
-use App\Models\Audit\MauditKat;
-use App\Models\Audit\MauditQuest;
+use App\Models\Audit\Maudit;
+use App\Models\Audit\MkatTanya;
+use App\Models\Audit\Mtanya;
 use App\Models\Stock\MauditItemgrp;
 use App\Models\Stock\MauditItem;
 use App\Models\Stock\MauditInventory;
@@ -16,16 +16,16 @@ class DashboardController extends Controller
     public function summary(): JsonResponse
     {
         // Audit Stats
-        $totalKategori = MauditKat::count();
-        $totalPertanyaan = MauditQuest::count();
-        $totalAudit = MauditAudit::count();
+        $totalKategori = MkatTanya::count();
+        $totalPertanyaan = Mtanya::count();
+        $totalAudit = Maudit::count();
 
         // Stock Stats
         $totalKategoriStok = MauditItemgrp::count();
         $totalBarang = MauditItem::count();
         $totalStokOpname = MauditInventory::count();
 
-        $recentAudits = MauditAudit::with('department')
+        $recentAudits = Maudit::with('department')
             ->orderBy('started_at', 'desc')
             ->take(5)
             ->get();

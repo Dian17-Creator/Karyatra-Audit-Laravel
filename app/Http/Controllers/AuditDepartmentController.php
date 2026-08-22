@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Models\Auth\mdepartment;
-use App\Models\Audit\MauditKat;
-use App\Models\Audit\MauditQuest;
-use App\Models\Audit\MauditAudit;
+use App\Models\Auth\Mdepartemen;
+use App\Models\Audit\MkatTanya;
+use App\Models\Audit\Mtanya;
+use App\Models\Audit\Maudit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -21,7 +21,7 @@ class AuditDepartmentController extends Controller
      */
     public function index(): JsonResponse
     {
-        $departments = mdepartment::select('nid as id', 'cname as name')
+        $departments = Mdepartemen::select('nid as id', 'cname as name')
             ->orderBy('cname')
             ->get();
 
@@ -40,7 +40,7 @@ class AuditDepartmentController extends Controller
      */
     public function mapping($id): JsonResponse
     {
-        $department = mdepartment::find($id);
+        $department = Mdepartemen::find($id);
 
         if (!$department) {
             return response()->json([
@@ -49,13 +49,13 @@ class AuditDepartmentController extends Controller
             ], 404);
         }
 
-        $linkedQuestionIds = $department->auditQuestions()->pluck('maudit_quest.nid')->toArray();
+        $linkedQuestionIds = $department->auditQuestions()->pluck('mtanya.nid')->toArray();
 
         // Get all categories ordered by name
-        $categories = MauditKat::orderBy('cnama')->get();
+        $categories = MkatTanya::orderBy('cnama')->get();
 
         // Get all active questions ordered by sequence
-        $questions = MauditQuest::active()->orderBy('nsequence')->get();
+        $questions = Mtanya::active()->orderBy('nsequence')->get();
         $groupedQuestions = $questions->groupBy('nid_kat');
 
         $formattedCategories = [];
@@ -74,7 +74,7 @@ class AuditDepartmentController extends Controller
             $formattedCategories[] = [
                 'id'        => $category->nid,
                 'name'      => $category->cnama,
-                'questions' => $formattedQuestions,
+                'questions' => $formattedCategories,
             ];
         }
 
@@ -99,9 +99,9 @@ class AuditDepartmentController extends Controller
     public function storeMapping(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'department_id'  => 'required|exists:mdepartment,nid',
+            'department_id'  => 'required|exists:mdepartemen,nid',
             'question_ids'   => 'required|array',
-            'question_ids.*' => 'exists:maudit_quest,nid',
+            'question_ids.*' => 'exists:mtanya,nid',
         ]);
 
         if ($validator->fails()) {
@@ -116,7 +116,7 @@ class AuditDepartmentController extends Controller
         $questionIds = $request->question_ids;
 
         // Cek apakah Department tersebut sedang memiliki audit yang masih aktif
-        $activeAudit = MauditAudit::where('nid_dept', $departmentId)
+        $activeAudit = Maudit::where('nid_dept', $departmentId)
             ->whereIn('cstatus', ['Draft', 'In Progress'])
             ->exists();
 
@@ -130,7 +130,7 @@ class AuditDepartmentController extends Controller
         DB::beginTransaction();
 
         try {
-            $department = mdepartment::find($departmentId);
+            $department = Mdepartemen::find($departmentId);
             $department->auditQuestions()->sync($questionIds);
 
             DB::commit();

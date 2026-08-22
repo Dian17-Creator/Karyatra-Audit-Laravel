@@ -2,16 +2,16 @@
 
 namespace App\Models\Auth;
 
-use App\Models\Audit\MauditAudit;
-use App\Models\Audit\MauditQuest;
+use App\Models\Audit\Maudit;
+use App\Models\Audit\Mtanya;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class mdepartment extends Model
+class Mdepartemen extends Model
 {
     use HasFactory;
 
-    protected $table = 'mdepartment';
+    protected $table = 'mdepartemen';
 
     protected $primaryKey = 'nid';
 
@@ -20,7 +20,7 @@ class mdepartment extends Model
     protected $fillable = [
         'cname',
         'dcreated',
-        'ccompany',
+        'cperusahaan',
     ];
 
     protected $casts = [
@@ -32,15 +32,7 @@ class mdepartment extends Model
      */
     public function users()
     {
-        return $this->hasMany(muser::class, 'niddept', 'nid');
-    }
-
-    /**
-     * Semua user yang payroll department-nya di sini
-     */
-    public function payrollUsers()
-    {
-        return $this->hasMany(muser::class, 'niddeptpayroll', 'nid');
+        return $this->hasMany(Muser::class, 'niddept', 'nid');
     }
 
     /**
@@ -48,7 +40,7 @@ class mdepartment extends Model
      */
     public function audits()
     {
-        return $this->hasMany(MauditAudit::class, 'nid_dept', 'nid');
+        return $this->hasMany(Maudit::class, 'nid_dept', 'nid');
     }
 
     /**
@@ -56,6 +48,6 @@ class mdepartment extends Model
      */
     public function auditQuestions()
     {
-        return $this->belongsToMany(MauditQuest::class, 'maudit_deptquest', 'nid_dept', 'nid_quest');
+        return $this->belongsToMany(Mtanya::class, 'tdept_tanya', 'nid_dept', 'nid_tanya');
     }
 }

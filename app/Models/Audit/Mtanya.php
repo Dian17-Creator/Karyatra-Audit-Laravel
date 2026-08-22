@@ -2,16 +2,16 @@
 
 namespace App\Models\Audit;
 
-use App\Models\Auth\mdepartment;
+use App\Models\Auth\Mdepartemen;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditQuest extends Model
+class Mtanya extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_quest';
+    protected $table = 'mtanya';
 
     protected $primaryKey = 'nid';
 
@@ -19,7 +19,9 @@ class MauditQuest extends Model
 
     protected $fillable = [
         'nid_kat',
+        'ctanya',
         'cquest',
+        'nurut',
         'nsequence',
         'factive',
         'created_at',
@@ -27,17 +29,37 @@ class MauditQuest extends Model
 
     protected $casts = [
         'nid_kat'    => 'integer',
-        'nsequence'  => 'integer',
+        'nurut'      => 'integer',
         'factive'    => 'boolean',
         'created_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    public function getCquestAttribute()
+    {
+        return $this->ctanya ?? ($this->attributes['cquest'] ?? null);
+    }
+
+    public function setCquestAttribute($value)
+    {
+        $this->attributes['ctanya'] = $value;
+    }
+
+    public function getNsequenceAttribute()
+    {
+        return $this->nurut ?? ($this->attributes['nsequence'] ?? null);
+    }
+
+    public function setNsequenceAttribute($value)
+    {
+        $this->attributes['nurut'] = $value;
+    }
 
     /**
      * Kategori pertanyaan
      */
     public function category()
     {
-        return $this->belongsTo(MauditKat::class, 'nid_kat', 'nid');
+        return $this->belongsTo(MkatTanya::class, 'nid_kat', 'nid');
     }
 
     /**
@@ -53,7 +75,7 @@ class MauditQuest extends Model
      */
     public function responses()
     {
-        return $this->hasMany(MauditResponses::class, 'nid_quest', 'nid');
+        return $this->hasMany(TauditHasil::class, 'nid_tanya', 'nid');
     }
 
     /**
@@ -61,6 +83,7 @@ class MauditQuest extends Model
      */
     public function departments()
     {
-        return $this->belongsToMany(mdepartment::class, 'maudit_deptquest', 'nid_quest', 'nid_dept');
+        return $this->belongsToMany(Mdepartemen::class, 'tdept_tanya', 'nid_tanya', 'nid_dept');
     }
 }
+

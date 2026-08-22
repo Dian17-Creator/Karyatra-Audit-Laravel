@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Audit\MauditKat;
+use App\Models\Audit\MkatTanya;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ class AuditCategoryController extends Controller
      */
     public function index()
     {
-        $categories = MauditKat::withCount('questions')
+        $categories = MkatTanya::withCount('questions')
             ->orderBy('nid')
             ->get()
             ->map(function ($item) {
@@ -51,7 +51,7 @@ class AuditCategoryController extends Controller
             ], 422);
         }
 
-        $category = MauditKat::create([
+        $category = MkatTanya::create([
             'cnama' => $request->name,
             'cket' => $request->description,
             'created_at' => now(),
@@ -78,7 +78,7 @@ class AuditCategoryController extends Controller
             'data' => $request->all(),
         ]);
 
-        $category = MauditKat::find($id);
+        $category = MkatTanya::find($id);
 
         if (!$category) {
             return response()->json([
@@ -124,7 +124,7 @@ class AuditCategoryController extends Controller
             'id' => $id,
         ]);
 
-        $category = MauditKat::withCount('questions')->find($id);
+        $category = MkatTanya::withCount('questions')->find($id);
 
         if (!$category) {
             return response()->json([
@@ -153,7 +153,7 @@ class AuditCategoryController extends Controller
      */
     public function show(int|string $id)
     {
-        $category = MauditKat::withCount('questions')->find($id);
+        $category = MkatTanya::withCount('questions')->find($id);
 
         if (!$category) {
             return response()->json([

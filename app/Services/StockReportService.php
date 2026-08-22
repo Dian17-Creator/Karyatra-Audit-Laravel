@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Stock\MauditInventory;
 use App\Models\Stock\MauditInvresp;
 use App\Models\Stock\MauditInvFoto;
-use App\Models\Auth\mdepartment;
+use App\Models\Auth\Mdepartemen;
 use App\Models\Stock\MauditDeptItem;
 use App\Models\Stock\MauditItem;
 use Illuminate\Support\Facades\DB;
@@ -99,7 +99,7 @@ class StockReportService
             'department_id' => $audit->nid_dept,
             'department_name' => $audit->department ? $audit->department->cname : null,
             'auditor_id' => $audit->nid_auditor,
-            'auditor_name' => $audit->auditor ? $audit->auditor->cfullname : null,
+            'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
             'audit_date' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
             'status' => $audit->cstatus,
             'auditee_name' => $audit->cauditee,
@@ -127,7 +127,7 @@ class StockReportService
                 ];
             }
 
-            $department = mdepartment::findOrFail($departmentId);
+            $department = Mdepartemen::findOrFail($departmentId);
 
             $deptName = strtolower(trim($department->cname));
             $deptName = preg_replace("/[^a-z0-9]+/", "_", $deptName);
@@ -263,7 +263,7 @@ class StockReportService
                 'department_id' => $audit->nid_dept,
                 'department_name' => $audit->department ? $audit->department->cname : null,
                 'auditor_id' => $audit->nid_auditor,
-                'auditor_name' => $audit->auditor ? $audit->auditor->cfullname : null,
+                'auditor_name' => $audit->auditor ? ($audit->auditor->cnamalengkap ?? $audit->auditor->cfullname) : null,
                 'status' => $audit->cstatus,
                 'audit_date' => $audit->daudit ? $audit->daudit->format('Y-m-d') : null,
                 'auditee_name' => $audit->cauditee,

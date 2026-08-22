@@ -4,77 +4,110 @@ namespace App\Models\Auth;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 
-class muser extends Authenticatable
+class Muser extends Authenticatable
 {
     use HasFactory;
+
     protected $table = 'muser';
     protected $primaryKey = 'nid';
     public $timestamps = false;
+
     protected $fillable = [
         'cemail',
-        'cmailaddress',
-        'cphone',
-        'cktp',
-        'cname',
-        'cfullname',
-        'caccnumber',
+        'cnamalengkap',
+        'cperusahaan',
         'cpassword',
-        'dtanggalmasuk',
         'dcreated',
-        'fadmin',
-        'fsuper',
-        'fhrd',
-        'factive',
-        'fsenior',
-        'niddept',
-        'niddeptpayroll',
-        'cdeptname',
-        'finger_id',
-        'rekening_id',
-        'bank',
-        'fface_approved',
-        'fnotif',
-        'ccompany',
-        'faudit',
+        'fowner',
+        'dnonactive',
+        'clevel',
+        'demailverified',
+        'cverifytokenhash',
+        'dverifyexpires',
+        'ntrialauditcreated',
+        'ntrialopnamecreated',
     ];
+
     protected $hidden = [
         'cpassword',
+        'cverifytokenhash',
     ];
+
     protected $casts = [
-        'dcreated' => 'datetime:Y-m-d H:i:s',
-        'fadmin' => 'boolean',
-        'fsuper' => 'boolean',
-        'fhrd' => 'boolean',
-        'fsenior' => 'boolean',
-        'finger_id' => 'integer',
-        'factive' => 'boolean',
-        'fnotif' => 'boolean',
-        'fface_approved' => 'boolean',
-        'faudit' => 'boolean',
+        'nid'                 => 'integer',
+        'dcreated'            => 'datetime',
+        'fowner'              => 'boolean',
+        'dnonactive'          => 'date',
+        'demailverified'      => 'datetime',
+        'dverifyexpires'      => 'datetime',
+        'ntrialauditcreated'  => 'integer',
+        'ntrialopnamecreated' => 'integer',
     ];
+
     public function getAuthPassword()
     {
         return $this->cpassword;
     }
-    public function isSuperAdmin()
+
+    /**
+     * Backward compatibility accessors
+     */
+    public function getCfullnameAttribute()
     {
-        return $this->fsuper == 1;
+        return $this->cnamalengkap;
     }
-    public function isAdmin()
+
+    public function getCcompanyAttribute()
     {
-        return $this->fadmin == 1;
+        return $this->cperusahaan;
     }
-    public function isHrd()
+
+    public function getFactiveAttribute()
     {
-        return $this->fhrd == 1;
+        return $this->isActive();
     }
-    public function isSenior()
+
+    public function getFauditAttribute()
     {
-        return $this->fsenior == 1;
+        return $this->isAudit();
     }
-    public function department()
+
+    public function getFadminAttribute()
     {
-        return $this->belongsTo(mdepartment::class, 'niddept', 'nid');
+        return $this->isAdmin();
+    }
+
+    public function getFsuperAttribute()
+    {
+        return $this->isOwner();
+    }
+
+    /**
+     * Helper methods
+     */
+    public function isActive(): bool
+    {
+        if ($this->dnonactive === null) {
+            return true;
+        }
+        return Carbon::parse($this->dnonactive)->isFuture();
+    }
+
+    public function isOwner(): bool
+    {
+        return (bool) $this->fowner;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->clevel === 'admin' || (bool) $this->fowner;
+    }
+
+    public function isAudit(): bool
+    {
+        return in_array($this->clevel, ['admin', 'audit']);
     }
 }
+

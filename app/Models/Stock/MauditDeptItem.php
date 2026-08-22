@@ -4,7 +4,7 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Auth\mdepartment;
+use App\Models\Auth\Mdepartemen;
 use App\Models\Stock\MauditItem;
 
 class MauditDeptItem extends Model
@@ -32,7 +32,7 @@ class MauditDeptItem extends Model
     public function department()
     {
         return $this->belongsTo(
-            mdepartment::class,
+            Mdepartemen::class,
             'nid_dept',
             'nid'
         );

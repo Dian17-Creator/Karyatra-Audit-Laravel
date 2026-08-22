@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Audit\MauditQuest;
+use App\Models\Audit\Mtanya;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +20,7 @@ class AuditQuestionController extends Controller
      */
     public function index($categoryId): JsonResponse
     {
-        $questions = MauditQuest::where('nid_kat', $categoryId)
+        $questions = Mtanya::where('nid_kat', $categoryId)
             ->active()
             ->orderBy('nsequence')
             ->get()
@@ -66,10 +66,10 @@ class AuditQuestionController extends Controller
         DB::beginTransaction();
 
         try {
-            $nextSequence = MauditQuest::where('nid_kat', $request->category_id)->max('nsequence');
+            $nextSequence = Mtanya::where('nid_kat', $request->category_id)->max('nsequence');
             $nextSequence = $nextSequence ? $nextSequence + 1 : 1;
 
-            $question = MauditQuest::create([
+            $question = Mtanya::create([
                 'nid_kat'    => $request->category_id,
                 'cquest'     => $request->question,
                 'nsequence'  => $nextSequence,
@@ -123,7 +123,7 @@ class AuditQuestionController extends Controller
             ], 422);
         }
 
-        $question = MauditQuest::find($id);
+        $question = Mtanya::find($id);
 
         if (!$question) {
             return response()->json([
@@ -171,7 +171,7 @@ class AuditQuestionController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $question = MauditQuest::find($id);
+        $question = Mtanya::find($id);
 
         if (!$question) {
             return response()->json([
@@ -194,7 +194,7 @@ class AuditQuestionController extends Controller
 
             $question->delete();
 
-            $remainingQuestions = MauditQuest::where('nid_kat', $categoryId)
+            $remainingQuestions = Mtanya::where('nid_kat', $categoryId)
                 ->orderBy('nsequence', 'asc')
                 ->get();
 
@@ -252,7 +252,7 @@ class AuditQuestionController extends Controller
         }
 
         // Pastikan semua question_id benar-benar milik category yang dikirim
-        $count = MauditQuest::where('nid_kat', $request->category_id)
+        $count = Mtanya::where('nid_kat', $request->category_id)
             ->whereIn('nid', $request->question_ids)
             ->count();
 
@@ -263,7 +263,7 @@ class AuditQuestionController extends Controller
             ], 422);
         }
 
-        $hasUsedQuestion = MauditQuest::whereIn('nid', $request->question_ids)
+        $hasUsedQuestion = Mtanya::whereIn('nid', $request->question_ids)
             ->has('responses')
             ->exists();
 
@@ -278,7 +278,7 @@ class AuditQuestionController extends Controller
 
         try {
             foreach ($request->question_ids as $index => $questionId) {
-                MauditQuest::where('nid', $questionId)
+                Mtanya::where('nid', $questionId)
                     ->update([
                         'nsequence' => $index + 1,
                     ]);
