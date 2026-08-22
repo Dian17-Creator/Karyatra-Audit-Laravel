@@ -10,7 +10,7 @@ class Muser extends Authenticatable
 {
     use HasFactory;
 
-    protected $table = 'Muser';
+    protected $table = 'muser';
     protected $primaryKey = 'nid';
     public $timestamps = false;
 
@@ -84,15 +84,9 @@ class Muser extends Authenticatable
         return $this->isOwner();
     }
 
-    /**
-     * Helper methods
-     */
     public function isActive(): bool
     {
-        if ($this->dnonactive === null) {
-            return true;
-        }
-        return Carbon::parse($this->dnonactive)->isFuture();
+        return $this->dnonactive === null;
     }
 
     public function isOwner(): bool
@@ -102,11 +96,11 @@ class Muser extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->clevel === 'admin' || (bool) $this->fowner;
+        return (bool) $this->fowner || strtolower(trim((string) $this->clevel)) === 'admin';
     }
 
     public function isAudit(): bool
     {
-        return in_array($this->clevel, ['admin', 'audit']);
+        return (bool) $this->fowner || in_array(strtolower(trim((string) $this->clevel)), ['admin', 'audit']);
     }
 }
