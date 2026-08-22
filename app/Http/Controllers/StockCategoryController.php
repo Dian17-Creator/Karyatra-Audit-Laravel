@@ -71,7 +71,7 @@ class StockCategoryController extends Controller
                 ?? $request->input('company');
 
             if (empty($cperusahaan)) {
-                $user = auth()->user() ?? auth('api')->user();
+                $user = auth()->user() ?? $request->user();
                 
                 $userId = $request->input('user_id') 
                     ?? $request->input('auditor_id') 
