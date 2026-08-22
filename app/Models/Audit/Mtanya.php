@@ -20,9 +20,7 @@ class Mtanya extends Model
     protected $fillable = [
         'nid_kat',
         'ctanya',
-        'cquest',
         'nurut',
-        'nsequence',
         'factive',
         'created_at',
     ];
@@ -36,7 +34,7 @@ class Mtanya extends Model
 
     public function getCquestAttribute()
     {
-        return $this->ctanya ?? ($this->attributes['cquest'] ?? null);
+        return $this->ctanya ?? ($this->attributes['ctanya'] ?? null);
     }
 
     public function setCquestAttribute($value)
@@ -46,7 +44,7 @@ class Mtanya extends Model
 
     public function getNsequenceAttribute()
     {
-        return $this->nurut ?? ($this->attributes['nsequence'] ?? null);
+        return $this->nurut ?? ($this->attributes['nurut'] ?? null);
     }
 
     public function setNsequenceAttribute($value)
@@ -86,4 +84,3 @@ class Mtanya extends Model
         return $this->belongsToMany(Mdepartemen::class, 'tdept_tanya', 'nid_tanya', 'nid_dept');
     }
 }
-

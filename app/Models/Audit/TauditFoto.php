@@ -19,10 +19,8 @@ class TauditFoto extends Model
         'nid_hasil',
         'nid_resp',
         'nurut',
-        'nsequence',
         'cket',
         'ctindakan',
-        'caction',
         'cphoto_path',
         'uploaded_at',
     ];
@@ -47,7 +45,7 @@ class TauditFoto extends Model
 
     public function getCactionAttribute()
     {
-        return $this->ctindakan ?? ($this->attributes['caction'] ?? null);
+        return $this->ctindakan ?? ($this->attributes['ctindakan'] ?? null);
     }
 
     public function setCactionAttribute($value)
@@ -57,7 +55,7 @@ class TauditFoto extends Model
 
     public function getNsequenceAttribute()
     {
-        return $this->nurut ?? ($this->attributes['nsequence'] ?? null);
+        return $this->nurut ?? ($this->attributes['nurut'] ?? null);
     }
 
     public function setNsequenceAttribute($value)
@@ -73,4 +71,3 @@ class TauditFoto extends Model
         return $this->belongsTo(TauditHasil::class, 'nid_hasil', 'nid');
     }
 }
-
