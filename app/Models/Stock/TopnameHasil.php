@@ -4,7 +4,7 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Stock\MauditItem;
+use App\Models\Stock\Mbarang;
 
 class MauditInvresp extends Model
 {
@@ -19,25 +19,25 @@ class MauditInvresp extends Model
     const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
-        'nid_audit',
-        'nid_item',
+        'nid_opname',
+        'nid_barang',
         'nqty_stock',
         'nqty_real',
-        'ndiff',
-        'ndiff_over',
-        'ndiff_under',
+        'nselisih',
+        'nsel_lebih',
+        'nsel_kurang',
         'fna',
         'cket',
     ];
 
     protected $casts = [
-        'nid_audit'   => 'integer',
-        'nid_item'    => 'integer',
+        'nid_opname'   => 'integer',
+        'nid_barang'    => 'integer',
         'nqty_stock'  => 'decimal:2',
         'nqty_real'   => 'decimal:2',
-        'ndiff'       => 'decimal:2',
-        'ndiff_over'  => 'decimal:2',
-        'ndiff_under' => 'decimal:2',
+        'nselisih'       => 'decimal:2',
+        'nsel_lebih'  => 'decimal:2',
+        'nsel_kurang' => 'decimal:2',
         'fna'         => 'boolean',
         'updated_at'  => 'datetime',
     ];
@@ -47,6 +47,6 @@ class MauditInvresp extends Model
      */
     public function item()
     {
-        return $this->belongsTo(MauditItem::class, 'nid_item', 'nid');
+        return $this->belongsTo(Mbarang::class, 'nid_item', 'nid');
     }
 }
