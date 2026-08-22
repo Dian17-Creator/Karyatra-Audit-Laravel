@@ -23,6 +23,7 @@ class Muser extends Authenticatable
         'fowner',
         'dnonactive',
         'clevel',
+        'niddept',
         'demailverified',
         'cverifytokenhash',
         'dverifyexpires',
@@ -37,6 +38,7 @@ class Muser extends Authenticatable
 
     protected $casts = [
         'nid'                 => 'integer',
+        'niddept'             => 'integer',
         'dcreated'            => 'datetime',
         'fowner'              => 'boolean',
         'dnonactive'          => 'date',

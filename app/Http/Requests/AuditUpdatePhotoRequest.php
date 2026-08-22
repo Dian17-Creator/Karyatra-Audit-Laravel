@@ -14,9 +14,11 @@ class AuditUpdatePhotoRequest extends FormRequest
     public function rules()
     {
         return [
-            'id' => 'required|integer|exists:maudit_foto,nid',
+            'id' => 'required|integer|exists:taudit_foto,nid',
             'observation' => 'nullable|string',
-            'recommendation' => 'nullable|string'
+            'recommendation' => 'nullable|string',
+            'cket' => 'nullable|string',
+            'caction' => 'nullable|string'
         ];
     }
 }

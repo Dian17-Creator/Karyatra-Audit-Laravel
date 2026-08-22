@@ -16,7 +16,7 @@ class AuditUpdateAnswersRequest extends FormRequest
         return [
             'audit_id' => 'required|integer|exists:maudit,nid',
             'answers' => 'required|array',
-            'answers.*.question_id' => 'required|integer|exists:maudit_quest,nid',
+            'answers.*.question_id' => 'required|integer|exists:mtanya,nid',
             'answers.*.score' => 'nullable|numeric|min:0|max:2',
             'answers.*.is_na' => 'nullable|boolean',
             'answers.*.remark' => 'nullable|string'

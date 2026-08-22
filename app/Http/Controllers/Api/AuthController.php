@@ -64,6 +64,7 @@ class AuthController extends Controller
                 'id'                   => $user->nid,
                 'email'                => $user->cemail,
                 'name'                 => $user->cnamalengkap,
+                'department_id'        => $user->niddept,
                 'company'              => $user->cperusahaan,
                 'level'                => $user->clevel,
                 'fowner'               => (bool) $user->fowner,
@@ -76,7 +77,8 @@ class AuthController extends Controller
                 'role' => [
                     'admin' => $user->isAdmin(),
                     'audit' => $user->isAudit(),
-                    'owner' => $user->isOwner(),
+                    'super' => $user->isOwner(),
+                    'hrd'   => strtolower(trim((string) $user->clevel)) === 'hrd',
                 ]
             ]
         ]);
@@ -162,6 +164,7 @@ class AuthController extends Controller
                 'id'                   => $user->nid,
                 'email'                => $user->cemail,
                 'name'                 => $user->cnamalengkap,
+                'department_id'        => $user->niddept,
                 'company'              => $user->cperusahaan,
                 'level'                => $user->clevel,
                 'fowner'               => (bool) $user->fowner,
@@ -169,6 +172,8 @@ class AuthController extends Controller
                 'role' => [
                     'admin' => $user->isAdmin(),
                     'audit' => $user->isAudit(),
+                    'super' => $user->isOwner(),
+                    'hrd'   => strtolower(trim((string) $user->clevel)) === 'hrd',
                     'owner' => $user->isOwner(),
                 ]
             ]
@@ -211,6 +216,7 @@ class AuthController extends Controller
                 'id'                   => $user->nid,
                 'email'                => $user->cemail,
                 'name'                 => $user->cnamalengkap,
+                'department_id'        => $user->niddept,
                 'company'              => $user->cperusahaan,
                 'level'                => $user->clevel,
                 'fowner'               => (bool) $user->fowner,
@@ -223,6 +229,8 @@ class AuthController extends Controller
                 'role' => [
                     'admin' => $user->isAdmin(),
                     'audit' => $user->isAudit(),
+                    'super' => $user->isOwner(),
+                    'hrd'   => strtolower(trim((string) $user->clevel)) === 'hrd',
                     'owner' => $user->isOwner(),
                 ]
             ]

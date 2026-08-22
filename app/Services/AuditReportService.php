@@ -89,7 +89,7 @@ class AuditReportService
 
             $categoriesMap[$categoryId]['questions'][] = [
                 'id' => $question->nid,
-                'question' => $question->cquest,
+                'question' => $question->ctanya ?? $question->cquest,
                 'response' => [
                     'id' => $response->nid,
                     'score' => $response->nnilai,
@@ -161,6 +161,7 @@ class AuditReportService
                 'nid_auditor' => $auditorId,
                 'daudit' => Carbon::today(),
                 'cstatus' => 'Draft',
+                'started_at' => Carbon::now(),
             ]);
 
             // Create blank responses based on mapping

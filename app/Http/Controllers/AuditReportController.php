@@ -249,8 +249,8 @@ class AuditReportController extends Controller
                 $photo = TauditFoto::create([
                     'nid_hasil' => $responseId,
                     'nurut' => $nextSequence,
-                    'cket' => $request->cket,
-                    'ctindakan' => $request->caction,
+                    'cket' => $request->cket ?? $request->observation,
+                    'ctindakan' => $request->caction ?? $request->recommendation ?? $request->action,
                     'cphoto_path' => $relativePath,
                     'uploaded_at' => now()
                 ]);
@@ -281,8 +281,8 @@ class AuditReportController extends Controller
             $photo = TauditFoto::findOrFail($request->id);
 
             $photo->update([
-                'cket' => $request->observation,
-                'ctindakan' => $request->recommendation
+                'cket' => $request->cket ?? $request->observation,
+                'ctindakan' => $request->caction ?? $request->recommendation ?? $request->action
             ]);
 
             return response()->json([
