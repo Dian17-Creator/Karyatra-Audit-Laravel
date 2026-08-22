@@ -32,7 +32,6 @@ class AuthController extends Controller
         $email = strtolower(trim($request->email));
         $user = Muser::where('cemail', $email)->first();
 
-        // User tidak ditemukan
         if (!$user) {
             return response()->json([
                 'success' => false,
