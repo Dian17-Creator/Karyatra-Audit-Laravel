@@ -21,9 +21,9 @@ class DashboardController extends Controller
         $totalAudit = Maudit::count();
 
         // Stock Stats
-        $totalKategoriStok = MauditItemgrp::count();
-        $totalBarang = MauditItem::count();
-        $totalStokOpname = MauditInventory::count();
+        // $totalKategoriStok = MauditItemgrp::count();
+        // $totalBarang = MauditItem::count();
+        // $totalStokOpname = MauditInventory::count();
 
         $recentAudits = Maudit::with('department')
             ->orderBy('nid', 'desc')
@@ -44,23 +44,23 @@ class DashboardController extends Controller
         });
 
         // Recent Stock Opname
-        $recentOpnames = MauditInventory::with('department')
-            ->orderBy('nid', 'desc')
-            ->take(5)
-            ->get();
+        // $recentOpnames = MauditInventory::with('department')
+        //     ->orderBy('nid', 'desc')
+        //     ->take(5)
+        //     ->get();
 
-        $recentStockOpname = $recentOpnames->map(function ($opname) {
-            $dateStr = '-';
-            if ($opname->daudit) {
-                $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
-            }
-            return [
-                'id' => $opname->nid,
-                'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
-                'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
-                'status' => $opname->cstatus ?? 'Draft'
-            ];
-        });
+        // $recentStockOpname = $recentOpnames->map(function ($opname) {
+        //     $dateStr = '-';
+        //     if ($opname->daudit) {
+        //         $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
+        //     }
+        //     return [
+        //         'id' => $opname->nid,
+        //         'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
+        //         'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
+        //         'status' => $opname->cstatus ?? 'Draft'
+        //     ];
+        // });
 
         return response()->json([
             'success' => true,
@@ -69,11 +69,11 @@ class DashboardController extends Controller
                 'total_kategori'   => $totalKategori,
                 'total_pertanyaan' => $totalPertanyaan,
                 'total_audit'      => $totalAudit,
-                'total_kategori_stok' => $totalKategoriStok,
-                'total_barang'     => $totalBarang,
-                'total_stok_opname' => $totalStokOpname,
+                // 'total_kategori_stok' => $totalKategoriStok,
+                // 'total_barang'     => $totalBarang,
+                // 'total_stok_opname' => $totalStokOpname,
                 'recent_activity'  => $recentActivity,
-                'recent_stock_opname' => $recentStockOpname
+                // 'recent_stock_opname' => $recentStockOpname
             ]
         ]);
     }
