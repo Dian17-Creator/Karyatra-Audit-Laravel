@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\Auth\Mdepartemen;
-use App\Models\Stock\MauditItem;
-use App\Models\Stock\MauditItemgrp;
-use App\Models\Stock\MauditDeptItem;
-use App\Models\Stock\MauditInventory;
+use App\Models\Stock\Mbarang;
+use App\Models\Stock\MkatBarang;
+use App\Models\Stock\TdeptBarang;
+use App\Models\Stock\Mopname;
 
 class StockDepartmentController extends Controller
 {
@@ -57,32 +57,32 @@ class StockDepartmentController extends Controller
          * Ambil ID barang yang sudah terhubung
          * dengan department tersebut.
          */
-        $linkedItemIds = MauditDeptItem::where(
+        $linkedItemIds = TdeptBarang::where(
             'nid_dept',
             $department->nid
         )
-            ->pluck('nid_item')
+            ->pluck('nid_barang')
             ->toArray();
 
         /*
          * Ambil semua kelompok/category barang.
          */
-        $categories = MauditItemgrp::orderBy('cnama')
+        $categories = MkatBarang::orderBy('cnama')
             ->get();
 
         /*
          * Ambil semua barang.
          *
-         * Urut berdasarkan sequence kemudian nama.
+         * Urut berdasarkan nurut kemudian nama barang.
          */
-        $items = MauditItem::orderBy('nsequence')
-            ->orderBy('citemname')
+        $items = Mbarang::orderBy('nurut')
+            ->orderBy('cbarang')
             ->get();
 
         /*
-         * Kelompokkan barang berdasarkan nid_grp.
+         * Kelompokkan barang berdasarkan nid_kat.
          */
-        $groupedItems = $items->groupBy('nid_grp');
+        $groupedItems = $items->groupBy('nid_kat');
 
         $formattedCategories = [];
 
@@ -95,8 +95,8 @@ class StockDepartmentController extends Controller
             $formattedItems = $categoryItems->map(function ($item) use ($linkedItemIds) {
                 return [
                     'id' => $item->nid,
-                    'name' => $item->citemname,
-                    'sequence' => $item->nsequence,
+                    'name' => $item->cbarang,
+                    'sequence' => $item->nurut,
                     'linked' => in_array(
                         $item->nid,
                         $linkedItemIds
@@ -135,13 +135,13 @@ class StockDepartmentController extends Controller
          * Validasi request.
          */
         $validator = Validator::make($request->all(), [
-            'department_id' => 'required|integer|exists:Mdepartemen,nid',
+            'department_id' => 'required|integer|exists:mdepartemen,nid',
 
             'item_ids' => 'nullable|array',
 
             'item_ids.*' => [
                 'integer',
-                'exists:maudit_items,nid',
+                'exists:mbarang,nid',
             ],
         ]);
 
@@ -172,7 +172,7 @@ class StockDepartmentController extends Controller
          * Mapping tidak boleh diubah apabila department
          * sedang digunakan dalam audit inventory.
          */
-        $activeAudit = MauditInventory::where(
+        $activeAudit = Mopname::where(
             'nid_dept',
             $departmentId
         )
@@ -213,7 +213,7 @@ class StockDepartmentController extends Controller
             /*
              * Hapus seluruh mapping lama department.
              */
-            MauditDeptItem::where(
+            TdeptBarang::where(
                 'nid_dept',
                 $departmentId
             )->delete();
@@ -227,11 +227,11 @@ class StockDepartmentController extends Controller
                 foreach ($itemIds as $itemId) {
                     $mappingData[] = [
                         'nid_dept' => $departmentId,
-                        'nid_item' => $itemId,
+                        'nid_barang' => $itemId,
                     ];
                 }
 
-                MauditDeptItem::insert($mappingData);
+                TdeptBarang::insert($mappingData);
             }
 
             DB::commit();
@@ -239,11 +239,11 @@ class StockDepartmentController extends Controller
             /*
              * Ambil kembali mapping setelah berhasil disimpan.
              */
-            $savedItemIds = MauditDeptItem::where(
+            $savedItemIds = TdeptBarang::where(
                 'nid_dept',
                 $departmentId
             )
-                ->pluck('nid_item')
+                ->pluck('nid_barang')
                 ->map(fn($id) => (int) $id)
                 ->values()
                 ->toArray();

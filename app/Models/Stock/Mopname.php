@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Auth\Mdepartemen;
 use App\Models\Auth\Muser;
+use App\Models\Stock\TopnameHasil;
 
 class Mopname extends Model
 {
@@ -62,6 +63,18 @@ class Mopname extends Model
         return $this->belongsTo(
             Muser::class,
             'nid_auditor',
+            'nid'
+        );
+    }
+
+    /**
+     * Hasil / rincian opname
+     */
+    public function responses()
+    {
+        return $this->hasMany(
+            TopnameHasil::class,
+            'nid_opname',
             'nid'
         );
     }
