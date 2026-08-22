@@ -14,10 +14,12 @@ class AuditUploadPhotoRequest extends FormRequest
     public function rules()
     {
         return [
-            'response_id' => 'required|integer|exists:maudit_responses,nid',
+            'response_id' => 'required|integer|exists:taudit_hasil,nid',
             'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:20480',
             'cket' => 'nullable|string',
-            'caction' => 'nullable|string'
+            'caction' => 'nullable|string',
+            'observation' => 'nullable|string',
+            'recommendation' => 'nullable|string'
         ];
     }
 }

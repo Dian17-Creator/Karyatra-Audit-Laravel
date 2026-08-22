@@ -14,7 +14,7 @@ class AuditDeletePhotoRequest extends FormRequest
     public function rules()
     {
         return [
-            'photo_id' => 'required|integer|exists:maudit_foto,nid'
+            'photo_id' => 'required|integer|exists:taudit_foto,nid'
         ];
     }
 }

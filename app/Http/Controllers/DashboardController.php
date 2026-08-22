@@ -26,31 +26,39 @@ class DashboardController extends Controller
         $totalStokOpname = MauditInventory::count();
 
         $recentAudits = Maudit::with('department')
-            ->orderBy('started_at', 'desc')
+            ->orderBy('nid', 'desc')
             ->take(5)
             ->get();
 
         $recentActivity = $recentAudits->map(function ($audit) {
+            $dateStr = '-';
+            if ($audit->daudit) {
+                $dateStr = is_string($audit->daudit) ? date('d M Y', strtotime($audit->daudit)) : $audit->daudit->format('d M Y');
+            }
             return [
                 'id' => $audit->nid,
                 'title' => 'Audit ' . ($audit->department->cnama ?? 'Departemen'),
-                'subtitle' => $audit->cdocid . ' • ' . ($audit->daudit ? $audit->daudit->format('d M Y') : '-'),
-                'status' => $audit->cstatus
+                'subtitle' => ($audit->cdocid ?? '-') . ' • ' . $dateStr,
+                'status' => $audit->cstatus ?? 'Draft'
             ];
         });
 
         // Recent Stock Opname
         $recentOpnames = MauditInventory::with('department')
-            ->orderBy('started_at', 'desc')
+            ->orderBy('nid', 'desc')
             ->take(5)
             ->get();
 
         $recentStockOpname = $recentOpnames->map(function ($opname) {
+            $dateStr = '-';
+            if ($opname->daudit) {
+                $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
+            }
             return [
                 'id' => $opname->nid,
                 'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
-                'subtitle' => $opname->cdocid . ' • ' . ($opname->daudit ? $opname->daudit->format('d M Y') : '-'),
-                'status' => $opname->cstatus
+                'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
+                'status' => $opname->cstatus ?? 'Draft'
             ];
         });
 
