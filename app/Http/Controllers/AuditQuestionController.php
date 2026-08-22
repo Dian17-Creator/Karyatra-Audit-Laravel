@@ -22,14 +22,14 @@ class AuditQuestionController extends Controller
     {
         $questions = Mtanya::where('nid_kat', $categoryId)
             ->active()
-            ->orderBy('curut')
+            ->orderBy('nurut')
             ->get()
             ->map(function ($item) {
                 return [
                     'id'          => $item->nid,
                     'category_id' => $item->nid_kat,
                     'question'    => $item->cquest,
-                    'sequence'    => $item->curut,
+                    'sequence'    => $item->nurut,
                     'active'      => $item->factive,
                     'created_at'  => $item->created_at,
                 ];
@@ -66,13 +66,13 @@ class AuditQuestionController extends Controller
         DB::beginTransaction();
 
         try {
-            $nextSequence = Mtanya::where('nid_kat', $request->category_id)->max('curut');
+            $nextSequence = Mtanya::where('nid_kat', $request->category_id)->max('nurut');
             $nextSequence = $nextSequence ? $nextSequence + 1 : 1;
 
             $question = Mtanya::create([
                 'nid_kat'    => $request->category_id,
                 'cquest'     => $request->question,
-                'curut'  => $nextSequence,
+                'nurut'  => $nextSequence,
                 'factive'    => 1,
                 'created_at' => now(),
             ]);
@@ -86,7 +86,7 @@ class AuditQuestionController extends Controller
                     'id'          => $question->nid,
                     'category_id' => $question->nid_kat,
                     'question'    => $question->cquest,
-                    'sequence'    => $question->curut,
+                    'sequence'    => $question->nurut,
                     'active'      => $question->factive,
                     'created_at'  => $question->created_at,
                 ],
@@ -154,7 +154,7 @@ class AuditQuestionController extends Controller
                 'id'          => $question->nid,
                 'category_id' => $question->nid_kat,
                 'question'    => $question->cquest,
-                'sequence'    => $question->curut,
+                'sequence'    => $question->nurut,
                 'active'      => $question->factive,
                 'created_at'  => $question->created_at,
             ],
@@ -195,12 +195,12 @@ class AuditQuestionController extends Controller
             $question->delete();
 
             $remainingQuestions = Mtanya::where('nid_kat', $categoryId)
-                ->orderBy('curut', 'asc')
+                ->orderBy('nurut', 'asc')
                 ->get();
 
             $sequence = 1;
             foreach ($remainingQuestions as $remaining) {
-                $remaining->curut = $sequence;
+                $remaining->nurut = $sequence;
                 $remaining->save();
                 $sequence++;
             }
@@ -280,7 +280,7 @@ class AuditQuestionController extends Controller
             foreach ($request->question_ids as $index => $questionId) {
                 Mtanya::where('nid', $questionId)
                     ->update([
-                        'curut' => $index + 1,
+                        'nurut' => $index + 1,
                     ]);
             }
 
