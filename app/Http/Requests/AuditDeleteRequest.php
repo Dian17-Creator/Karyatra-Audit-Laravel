@@ -14,7 +14,7 @@ class AuditDeleteRequest extends FormRequest
     public function rules()
     {
         return [
-            'id' => 'required|integer|exists:maudit_audits,nid'
+            'id' => 'required|integer|exists:maudit,nid'
         ];
     }
 }
