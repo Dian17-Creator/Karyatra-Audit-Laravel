@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('muser')) {
-            Schema::create('muser', function (Blueprint $table) {
+        if (!Schema::hasTable('Muser')) {
+            Schema::create('Muser', function (Blueprint $table) {
                 $table->integer('nid')->autoIncrement();
                 $table->string('cemail', 255)->unique();
                 $table->string('cnamalengkap', 255);
@@ -23,7 +23,7 @@ return new class extends Migration
                 $table->date('dnonactive')->nullable();
                 $table->enum('clevel', ['admin', 'audit'])->default('audit');
                 $table->dateTime('demailverified')->nullable();
-                $table->char('cverifytokenhash', 64)->nullable()->unique('uq_muser_verifytokenhash');
+                $table->char('cverifytokenhash', 64)->nullable()->unique('uq_Muser_verifytokenhash');
                 $table->dateTime('dverifyexpires')->nullable();
                 $table->unsignedInteger('ntrialauditcreated')->default(0);
                 $table->unsignedInteger('ntrialopnamecreated')->default(0);
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('muser');
+        Schema::dropIfExists('Muser');
     }
 };
