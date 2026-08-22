@@ -5,7 +5,7 @@ namespace App\Models\Stock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Stock\MkatBarang;
-use App\Models\Stock\MauditInvresp;
+use App\Models\Stock\TopnameHasil;
 
 class Mbarang extends Model
 {
@@ -42,6 +42,6 @@ class Mbarang extends Model
      */
     public function invresps()
     {
-        return $this->hasMany(MauditInvresp::class, 'nid_item', 'nid');
+        return $this->hasMany(TopnameHasil::class, 'nid_item', 'nid');
     }
 }
