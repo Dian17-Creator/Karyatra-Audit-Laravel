@@ -4,7 +4,7 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Stock\MauditItemgrp;
+use App\Models\Stock\MkatBarang;
 use App\Models\Stock\MauditInvresp;
 
 class Mbarang extends Model

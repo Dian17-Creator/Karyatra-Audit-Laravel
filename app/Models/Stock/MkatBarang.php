@@ -5,11 +5,11 @@ namespace App\Models\Stock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MauditItemgrp extends Model
+class MkatBarang extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_itemgrp';
+    protected $table = 'mkat_barang';
 
     protected $primaryKey = 'nid';
 
@@ -18,6 +18,7 @@ class MauditItemgrp extends Model
     protected $fillable = [
         'cnama',
         'cket',
+        'cperusahaan',
     ];
 
     protected $casts = [
@@ -29,6 +30,6 @@ class MauditItemgrp extends Model
      */
     public function items()
     {
-        return $this->hasMany(MauditItem::class, 'nid_grp', 'nid');
+        return $this->hasMany(Mbarang::class, 'nid_kat', 'nid');
     }
 }

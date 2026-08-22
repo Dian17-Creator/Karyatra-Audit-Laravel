@@ -5,13 +5,13 @@ namespace App\Models\Stock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Auth\Mdepartemen;
-use App\Models\Stock\MauditItem;
+use App\Models\Stock\Mbarang;
 
-class MauditDeptItem extends Model
+class Tdeptbarang extends Model
 {
     use HasFactory;
 
-    protected $table = 'maudit_deptitem';
+    protected $table = 'tdept_barang';
 
     public $timestamps = false;
 
@@ -21,12 +21,12 @@ class MauditDeptItem extends Model
 
     protected $fillable = [
         'nid_dept',
-        'nid_item',
+        'nid_barang',
     ];
 
     protected $casts = [
         'nid_dept' => 'integer',
-        'nid_item' => 'integer',
+        'nid_barang' => 'integer',
     ];
 
     public function department()
@@ -41,8 +41,8 @@ class MauditDeptItem extends Model
     public function item()
     {
         return $this->belongsTo(
-            MauditItem::class,
-            'nid_item',
+            Mbarang::class,
+            'nid_barang',
             'nid'
         );
     }

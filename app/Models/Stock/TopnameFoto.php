@@ -4,9 +4,9 @@ namespace App\Models\Stock;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MauditInvFoto extends Model
+class TopnameFoto extends Model
 {
-    protected $table = 'maudit_invfoto';
+    protected $table = 'topname_foto';
 
     protected $primaryKey = 'nid';
 
@@ -17,18 +17,17 @@ class MauditInvFoto extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'nid_resp',
-        'nsequence',
+        'nid_hasil',
+        'nurut',
         'cket',
-        'caction',
         'cphoto_path',
         'uploaded_at',
     ];
 
     protected $casts = [
         'nid' => 'integer',
-        'nid_resp' => 'integer',
-        'nsequence' => 'integer',
+        'nid_hasil' => 'integer',
+        'nurut' => 'integer',
         'uploaded_at' => 'datetime',
     ];
 }
