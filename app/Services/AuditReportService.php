@@ -79,9 +79,11 @@ class AuditReportService
             $categoriesMap[$categoryId]['max_score'] += 2; // Each question max 2
 
             $photos = $response->photos->map(function ($photo) {
+                $path = (string) $photo->cphoto_path;
+                $fullPath = str_starts_with($path, 'uploads/') ? $path : 'uploads/' . ltrim($path, '/');
                 return [
                     'id' => $photo->nid,
-                    'photo_path' => request()->getSchemeAndHttpHost() . '/' . ltrim($photo->cphoto_path, '/'),
+                    'photo_path' => asset($fullPath),
                     'remark' => $photo->cket,
                     'action' => $photo->caction,
                 ];
@@ -107,6 +109,13 @@ class AuditReportService
                 : 0;
         }
 
+        $verPath = $audit->cphoto_path;
+        $verUrl = null;
+        if ($verPath) {
+            $fullVerPath = str_starts_with($verPath, 'uploads/') ? $verPath : 'uploads/' . ltrim($verPath, '/');
+            $verUrl = asset($fullVerPath);
+        }
+
         return [
             'audit' => [
                 'id' => $audit->nid,
@@ -118,7 +127,7 @@ class AuditReportService
                 'total_score' => (float) $audit->ntotnilai,
                 'max_score' => (float) $audit->nnilaimax,
                 'percentage' => (float) $audit->npersen,
-                'verification_photo' => $audit->cphoto_path ? request()->getSchemeAndHttpHost() . '/' . ltrim($audit->cphoto_path, '/') : null,
+                'verification_photo' => $verUrl,
                 'auditee_name' => $audit->cauditee,
                 'submitted_at' => $audit->submitted_at ? $audit->submitted_at->format('Y-m-d H:i:s') : null,
             ],

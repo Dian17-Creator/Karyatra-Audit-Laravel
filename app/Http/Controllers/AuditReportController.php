@@ -255,12 +255,14 @@ class AuditReportController extends Controller
                     'uploaded_at' => now()
                 ]);
 
+                $fullPath = str_starts_with($relativePath, 'uploads/') ? $relativePath : 'uploads/' . ltrim($relativePath, '/');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Upload berhasil.',
                     'data' => [
                         'id' => $photo->nid,
-                        'photo_path' => asset('uploads/' . $relativePath)
+                        'photo_path' => asset($fullPath)
                     ]
                 ]);
             });
