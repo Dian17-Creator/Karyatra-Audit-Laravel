@@ -69,17 +69,18 @@ class AuditDepartmentController extends Controller
                     'question' => $q->ctanya,
                     'linked'   => in_array($q->nid, $linkedQuestionIds),
                 ];
-            });
+            })->values();
 
             $formattedCategories[] = [
                 'id'        => $category->nid,
                 'name'      => $category->cnama,
-                'questions' => $formattedCategories,
+                'questions' => $formattedQuestions,
             ];
         }
 
         return response()->json([
             'success' => true,
+            'message' => 'Data mapping pertanyaan berhasil diambil.',
             'data'    => [
                 'department' => [
                     'id'   => $department->nid,
@@ -99,9 +100,9 @@ class AuditDepartmentController extends Controller
     public function storeMapping(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'department_id'  => 'required|exists:mdepartemen,nid',
-            'question_ids'   => 'required|array',
-            'question_ids.*' => 'exists:mtanya,nid',
+            'department_id'  => 'required|integer|exists:mdepartemen,nid',
+            'question_ids'   => 'nullable|array',
+            'question_ids.*' => 'integer|exists:mtanya,nid',
         ]);
 
         if ($validator->fails()) {
@@ -112,8 +113,12 @@ class AuditDepartmentController extends Controller
             ], 422);
         }
 
-        $departmentId = $request->department_id;
-        $questionIds = $request->question_ids;
+        $departmentId = (int) $request->department_id;
+        $questionIds = collect($request->input('question_ids', []))
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->toArray();
 
         // Cek apakah Department tersebut sedang memiliki audit yang masih aktif
         $activeAudit = Maudit::where('nid_dept', $departmentId)
@@ -131,6 +136,15 @@ class AuditDepartmentController extends Controller
 
         try {
             $department = Mdepartemen::find($departmentId);
+
+            if (!$department) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Department tidak ditemukan.',
+                ], 404);
+            }
+
             $department->auditQuestions()->sync($questionIds);
 
             DB::commit();
@@ -138,6 +152,14 @@ class AuditDepartmentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Pemetaan pertanyaan berhasil disimpan.',
+                'data'    => [
+                    'department' => [
+                        'id'   => $department->nid,
+                        'name' => $department->cnama,
+                    ],
+                    'question_ids' => $questionIds,
+                    'total_questions' => count($questionIds),
+                ],
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
