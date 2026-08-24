@@ -20,6 +20,7 @@ class TdeptTanya extends Model
 
     protected $fillable = [
         'nid_dept',
+        'nid_tanya',
     ];
 
     public function department()
