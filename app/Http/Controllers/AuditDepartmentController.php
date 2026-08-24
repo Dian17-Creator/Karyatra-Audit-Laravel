@@ -4,24 +4,29 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Models\Auth\Mdepartemen;
-use App\Models\Audit\MkatTanya;
-use App\Models\Audit\Mtanya;
-use App\Models\Audit\Maudit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+
+use App\Models\Auth\Mdepartemen;
+use App\Models\Audit\Mtanya;
+use App\Models\Audit\MkatTanya;
+use App\Models\Audit\TdeptTanya;
+use App\Models\Audit\Maudit;
 
 class AuditDepartmentController extends Controller
 {
     /**
      * Get all departments.
      *
-     * @return JsonResponse
+     * GET /api/audit/departments
      */
     public function index(): JsonResponse
     {
-        $departments = Mdepartemen::select('nid as id', 'cnama as name')
+        $departments = Mdepartemen::select(
+            'nid as id',
+            'cnama as name'
+        )
             ->orderBy('cnama')
             ->get();
 
@@ -33,10 +38,9 @@ class AuditDepartmentController extends Controller
     }
 
     /**
-     * Get department to questions mapping.
+     * Get department to audit questions mapping.
      *
-     * @param int $id
-     * @return JsonResponse
+     * GET /api/audit/departments/{id}/mapping
      */
     public function mapping($id): JsonResponse
     {
@@ -49,25 +53,55 @@ class AuditDepartmentController extends Controller
             ], 404);
         }
 
-        $linkedQuestionIds = $department->auditQuestions()->pluck('mtanya.nid')->toArray();
+        /*
+         * Ambil ID pertanyaan yang sudah terhubung
+         * dengan department tersebut langsung dari pivot table.
+         */
+        $linkedQuestionIds = TdeptTanya::where(
+            'nid_dept',
+            $department->nid
+        )
+            ->pluck('nid_tanya')
+            ->toArray();
 
-        // Get all categories ordered by name
-        $categories = MkatTanya::orderBy('cnama')->get();
+        /*
+         * Ambil semua kelompok/category pertanyaan.
+         */
+        $categories = MkatTanya::orderBy('cnama')
+            ->get();
 
-        // Get all active questions ordered by sequence
-        $questions = Mtanya::active()->orderBy('nurut')->get();
+        /*
+         * Ambil semua pertanyaan aktif.
+         * Urut berdasarkan nurut kemudian text pertanyaan.
+         */
+        $questions = Mtanya::active()
+            ->orderBy('nurut')
+            ->orderBy('ctanya')
+            ->get();
+
+        /*
+         * Kelompokkan pertanyaan berdasarkan nid_kat.
+         */
         $groupedQuestions = $questions->groupBy('nid_kat');
 
         $formattedCategories = [];
 
         foreach ($categories as $category) {
-            $catQuestions = $groupedQuestions->get($category->nid, collect());
+            $categoryQuestions = $groupedQuestions->get(
+                $category->nid,
+                collect()
+            );
 
-            $formattedQuestions = $catQuestions->map(function ($q) use ($linkedQuestionIds) {
+            $formattedQuestions = $categoryQuestions->map(function ($q) use ($linkedQuestionIds) {
                 return [
                     'id'       => $q->nid,
                     'question' => $q->ctanya,
-                    'linked'   => in_array($q->nid, $linkedQuestionIds),
+                    'name'     => $q->ctanya,
+                    'sequence' => $q->nurut,
+                    'linked'   => in_array(
+                        $q->nid,
+                        $linkedQuestionIds
+                    ),
                 ];
             })->values();
 
@@ -75,6 +109,7 @@ class AuditDepartmentController extends Controller
                 'id'        => $category->nid,
                 'name'      => $category->cnama,
                 'questions' => $formattedQuestions,
+                'items'     => $formattedQuestions,
             ];
         }
 
@@ -92,17 +127,27 @@ class AuditDepartmentController extends Controller
     }
 
     /**
-     * Update department to questions mapping.
+     * Store / update department to audit questions mapping.
      *
-     * @param Request $request
-     * @return JsonResponse
+     * POST /api/audit/departments/mapping
      */
     public function storeMapping(Request $request): JsonResponse
     {
+        /*
+         * Validasi request.
+         */
         $validator = Validator::make($request->all(), [
             'department_id'  => 'required|integer|exists:mdepartemen,nid',
             'question_ids'   => 'nullable|array',
-            'question_ids.*' => 'integer|exists:mtanya,nid',
+            'question_ids.*' => [
+                'integer',
+                'exists:mtanya,nid',
+            ],
+            'item_ids'       => 'nullable|array',
+            'item_ids.*'     => [
+                'integer',
+                'exists:mtanya,nid',
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -114,40 +159,100 @@ class AuditDepartmentController extends Controller
         }
 
         $departmentId = (int) $request->department_id;
-        $questionIds = collect($request->input('question_ids', []))
+
+        /*
+         * Ambil question_ids atau item_ids, hilangkan duplicate ID.
+         */
+        $rawIds = $request->input('question_ids') ?? $request->input('item_ids', []);
+        $questionIds = collect($rawIds)
             ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->toArray();
 
-        // Cek apakah Department tersebut sedang memiliki audit yang masih aktif
-        $activeAudit = Maudit::where('nid_dept', $departmentId)
-            ->whereIn('cstatus', ['Draft', 'In Progress'])
-            ->exists();
+        /*
+         * =========================================================
+         * CEK AUDIT AKTIF
+         * =========================================================
+         *
+         * Mapping tidak boleh diubah apabila department
+         * sedang digunakan dalam audit aktif.
+         */
+        $activeAudit = Maudit::where(
+            'nid_dept',
+            $departmentId
+        )
+            ->whereIn('cstatus', [
+                'Draft',
+                'In Progress',
+            ])
+            ->first();
 
         if ($activeAudit) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pemetaan pertanyaan tidak dapat diubah karena department sedang digunakan dalam audit.'
+                'message' => 'Pemetaan pertanyaan tidak dapat diubah karena department sedang digunakan dalam audit.',
+                'data'    => [
+                    'document_id' => $activeAudit->cdocid,
+                    'status'      => $activeAudit->cstatus,
+                ],
             ], 409);
         }
 
         DB::beginTransaction();
 
         try {
+            /*
+             * Pastikan department masih ada.
+             */
             $department = Mdepartemen::find($departmentId);
 
             if (!$department) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Department tidak ditemukan.',
                 ], 404);
             }
 
-            $department->auditQuestions()->sync($questionIds);
+            /*
+             * Hapus seluruh mapping lama department.
+             */
+            TdeptTanya::where(
+                'nid_dept',
+                $departmentId
+            )->delete();
+
+            /*
+             * Masukkan mapping baru.
+             */
+            if (!empty($questionIds)) {
+                $mappingData = [];
+
+                foreach ($questionIds as $qId) {
+                    $mappingData[] = [
+                        'nid_dept'  => $departmentId,
+                        'nid_tanya' => $qId,
+                    ];
+                }
+
+                TdeptTanya::insert($mappingData);
+            }
 
             DB::commit();
+
+            /*
+             * Ambil kembali mapping setelah berhasil disimpan.
+             */
+            $savedQuestionIds = TdeptTanya::where(
+                'nid_dept',
+                $departmentId
+            )
+                ->pluck('nid_tanya')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->toArray();
 
             return response()->json([
                 'success' => true,
@@ -157,17 +262,27 @@ class AuditDepartmentController extends Controller
                         'id'   => $department->nid,
                         'name' => $department->cnama,
                     ],
-                    'question_ids' => $questionIds,
-                    'total_questions' => count($questionIds),
+                    'question_ids'    => $savedQuestionIds,
+                    'item_ids'        => $savedQuestionIds,
+                    'total_questions' => count($savedQuestionIds),
+                    'total_items'     => count($savedQuestionIds),
                 ],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Gagal menyimpan pemetaan department: ' . $e->getMessage());
+
+            Log::error(
+                'Gagal menyimpan pemetaan pertanyaan department.',
+                [
+                    'department_id' => $departmentId,
+                    'question_ids'  => $questionIds,
+                    'error'         => $e->getMessage(),
+                ]
+            );
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan pemetaan.',
+                'message' => 'Terjadi kesalahan saat menyimpan pemetaan pertanyaan.',
             ], 500);
         }
     }
