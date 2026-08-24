@@ -105,4 +105,24 @@ class Muser extends Authenticatable
     {
         return (bool) $this->fowner || in_array(strtolower(trim((string) $this->clevel)), ['admin', 'audit']);
     }
+
+    public function issueVerificationToken(): string
+    {
+        $rawToken = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $this->cverifytokenhash = hash('sha256', $rawToken);
+        $this->dverifyexpires = Carbon::now()->addHours(48);
+        $this->save();
+
+        return $rawToken;
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return $this->demailverified !== null;
+    }
+
+    public function isTrial(): bool
+    {
+        return !$this->isEmailVerified();
+    }
 }
