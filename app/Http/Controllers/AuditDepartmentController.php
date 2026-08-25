@@ -21,14 +21,20 @@ class AuditDepartmentController extends Controller
      *
      * GET /api/audit/departments
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $departments = Mdepartemen::select(
+        $company = $this->resolveCompany($request);
+
+        $query = Mdepartemen::select(
             'nid as id',
             'cnama as name'
-        )
-            ->orderBy('cnama')
-            ->get();
+        );
+
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $departments = $query->orderBy('cnama')->get();
 
         return response()->json([
             'success' => true,
@@ -42,9 +48,16 @@ class AuditDepartmentController extends Controller
      *
      * GET /api/audit/departments/{id}/mapping
      */
-    public function mapping($id): JsonResponse
+    public function mapping(Request $request, $id): JsonResponse
     {
-        $department = Mdepartemen::find($id);
+        $company = $this->resolveCompany($request);
+
+        $query = Mdepartemen::where('nid', $id);
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $department = $query->first();
 
         if (!$department) {
             return response()->json([
@@ -65,16 +78,21 @@ class AuditDepartmentController extends Controller
             ->toArray();
 
         /*
-         * Ambil semua kelompok/category pertanyaan.
+         * Ambil semua kelompok/category pertanyaan milik perusahaan.
          */
-        $categories = MkatTanya::orderBy('cnama')
-            ->get();
+        $catQuery = MkatTanya::orderBy('cnama');
+        if ($company) {
+            $catQuery->where('cperusahaan', $company);
+        }
+        $categories = $catQuery->get();
+
+        $categoryIds = $categories->pluck('nid')->toArray();
 
         /*
-         * Ambil semua pertanyaan aktif.
-         * Urut berdasarkan nurut kemudian text pertanyaan.
+         * Ambil semua pertanyaan aktif milik kategori perusahaan.
          */
         $questions = Mtanya::active()
+            ->whereIn('nid_kat', $categoryIds)
             ->orderBy('nurut')
             ->orderBy('ctanya')
             ->get();
@@ -133,9 +151,6 @@ class AuditDepartmentController extends Controller
      */
     public function storeMapping(Request $request): JsonResponse
     {
-        /*
-         * Validasi request.
-         */
         $validator = Validator::make($request->all(), [
             'department_id'  => 'required|integer|exists:mdepartemen,nid',
             'question_ids'   => 'nullable|array',
@@ -158,7 +173,21 @@ class AuditDepartmentController extends Controller
             ], 422);
         }
 
+        $company = $this->resolveCompany($request);
         $departmentId = (int) $request->department_id;
+
+        $deptQuery = Mdepartemen::where('nid', $departmentId);
+        if ($company) {
+            $deptQuery->where('cperusahaan', $company);
+        }
+        $department = $deptQuery->first();
+
+        if (!$department) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Department tidak ditemukan.',
+            ], 404);
+        }
 
         /*
          * Ambil question_ids atau item_ids, hilangkan duplicate ID.
@@ -171,12 +200,7 @@ class AuditDepartmentController extends Controller
             ->toArray();
 
         /*
-         * =========================================================
          * CEK AUDIT AKTIF
-         * =========================================================
-         *
-         * Mapping tidak boleh diubah apabila department
-         * sedang digunakan dalam audit aktif.
          */
         $activeAudit = Maudit::where(
             'nid_dept',
@@ -202,20 +226,6 @@ class AuditDepartmentController extends Controller
         DB::beginTransaction();
 
         try {
-            /*
-             * Pastikan department masih ada.
-             */
-            $department = Mdepartemen::find($departmentId);
-
-            if (!$department) {
-                DB::rollBack();
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Department tidak ditemukan.',
-                ], 404);
-            }
-
             /*
              * Hapus seluruh mapping lama department.
              */

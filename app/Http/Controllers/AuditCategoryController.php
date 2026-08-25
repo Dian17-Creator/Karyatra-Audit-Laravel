@@ -12,25 +12,32 @@ class AuditCategoryController extends Controller
     /**
      * GET /api/audit/categories
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = MkatTanya::withCount('questions')
-            ->orderBy('nid')
+        $company = $this->resolveCompany($request);
+
+        $query = MkatTanya::withCount('questions');
+
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $categories = $query->orderBy('nid')
             ->get()
             ->map(function ($item) {
                 return [
-                    'id' => $item->nid,
-                    'name' => $item->cnama,
-                    'description' => $item->cket,
+                    'id'             => $item->nid,
+                    'name'           => $item->cnama,
+                    'description'    => $item->cket,
                     'question_count' => $item->questions_count,
-                    'created_at' => $item->created_at,
+                    'created_at'     => $item->created_at,
                 ];
             });
 
         return response()->json([
             'success' => true,
             'message' => 'Data kategori berhasil diambil.',
-            'data' => $categories,
+            'data'    => $categories,
         ]);
     }
 
@@ -40,7 +47,7 @@ class AuditCategoryController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
+            'name'        => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
         ]);
 
@@ -51,44 +58,28 @@ class AuditCategoryController extends Controller
             ], 422);
         }
 
-        $cperusahaan = $request->input('cperusahaan') 
-            ?? $request->input('company');
+        $company = $this->resolveCompany($request);
 
-        if (empty($cperusahaan)) {
-            $user = auth()->user() ?? $request->user();
-            
-            $userId = $request->input('user_id') 
-                ?? $request->input('auditor_id') 
-                ?? $request->input('nid_auditor')
-                ?? $request->input('nid_user');
-
-            if (!$user && $userId) {
-                $user = \App\Models\Auth\Muser::find($userId);
-            }
-
-            if ($user) {
-                $cperusahaan = $user->cperusahaan ?? $user->ccompany;
-            }
-        }
-
-        if (empty($cperusahaan)) {
-            $firstUser = \App\Models\Auth\Muser::whereNotNull('cperusahaan')->first();
-            $cperusahaan = $firstUser ? $firstUser->cperusahaan : 'Default';
+        if (empty($company)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sesi perusahaan tidak valid. Pengguna/perusahaan tidak ditemukan.',
+            ], 422);
         }
 
         $category = MkatTanya::create([
-            'cnama' => $request->name,
-            'cket' => $request->description,
-            'cperusahaan' => $cperusahaan,
-            'created_at' => now(),
+            'cnama'       => $request->name,
+            'cket'        => $request->description,
+            'cperusahaan' => $company,
+            'created_at'  => now(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil ditambahkan.',
-            'data' => [
-                'id' => $category->nid,
-                'name' => $category->cnama,
+            'data'    => [
+                'id'          => $category->nid,
+                'name'        => $category->cnama,
                 'description' => $category->cket,
             ]
         ], 201);
@@ -99,12 +90,19 @@ class AuditCategoryController extends Controller
      */
     public function update(Request $request, int|string $id)
     {
-        Log::info('UPDATE MASUK', [
-            'id' => $id,
+        Log::info('UPDATE KATEGORI AUDIT', [
+            'id'   => $id,
             'data' => $request->all(),
         ]);
 
-        $category = MkatTanya::find($id);
+        $company = $this->resolveCompany($request);
+
+        $query = MkatTanya::where('nid', $id);
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $category = $query->first();
 
         if (!$category) {
             return response()->json([
@@ -114,7 +112,7 @@ class AuditCategoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
+            'name'        => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
         ]);
 
@@ -127,15 +125,15 @@ class AuditCategoryController extends Controller
 
         $category->update([
             'cnama' => $request->name,
-            'cket' => $request->description,
+            'cket'  => $request->description,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil diperbarui.',
-            'data' => [
-                'id' => $category->nid,
-                'name' => $category->cnama,
+            'data'    => [
+                'id'          => $category->nid,
+                'name'        => $category->cnama,
                 'description' => $category->cket,
             ]
         ]);
@@ -144,13 +142,20 @@ class AuditCategoryController extends Controller
     /**
      * DELETE /api/audit/categories/{id}
      */
-    public function destroy(int|string $id)
+    public function destroy(Request $request, int|string $id)
     {
-        Log::info('DELETE MASUK', [
+        Log::info('DELETE KATEGORI AUDIT', [
             'id' => $id,
         ]);
 
-        $category = MkatTanya::withCount('questions')->find($id);
+        $company = $this->resolveCompany($request);
+
+        $query = MkatTanya::withCount('questions')->where('nid', $id);
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $category = $query->first();
 
         if (!$category) {
             return response()->json([
@@ -177,9 +182,16 @@ class AuditCategoryController extends Controller
     /**
      * GET /api/audit/categories/{id}
      */
-    public function show(int|string $id)
+    public function show(Request $request, int|string $id)
     {
-        $category = MkatTanya::withCount('questions')->find($id);
+        $company = $this->resolveCompany($request);
+
+        $query = MkatTanya::withCount('questions')->where('nid', $id);
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $category = $query->first();
 
         if (!$category) {
             return response()->json([
@@ -191,12 +203,12 @@ class AuditCategoryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail kategori berhasil diambil.',
-            'data' => [
-                'id' => $category->nid,
-                'name' => $category->cnama,
-                'description' => $category->cket,
+            'data'    => [
+                'id'             => $category->nid,
+                'name'           => $category->cnama,
+                'description'    => $category->cket,
                 'question_count' => $category->questions_count,
-                'created_at' => $category->created_at,
+                'created_at'     => $category->created_at,
             ],
         ]);
     }

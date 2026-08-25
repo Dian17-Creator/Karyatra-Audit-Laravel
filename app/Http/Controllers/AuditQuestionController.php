@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Audit\Mtanya;
+use App\Models\Audit\MkatTanya;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -15,11 +16,27 @@ class AuditQuestionController extends Controller
     /**
      * Display a listing of active questions for a given audit category.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  int  $categoryId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index($categoryId): JsonResponse
+    public function index(Request $request, $categoryId): JsonResponse
     {
+        $company = $this->resolveCompany($request);
+
+        if ($company) {
+            $categoryOwned = MkatTanya::where('nid', $categoryId)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak ditemukan.',
+                ], 404);
+            }
+        }
+
         $questions = Mtanya::where('nid_kat', $categoryId)
             ->active()
             ->orderBy('nurut')
@@ -51,7 +68,7 @@ class AuditQuestionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'category_id' => 'required|integer|exists:mkat_tanya,nid',
+            'category_id' => 'required|integer|exists:maudit_kat,nid',
             'question'    => 'required|string|max:1000',
         ]);
 
@@ -63,6 +80,21 @@ class AuditQuestionController extends Controller
             ], 422);
         }
 
+        $company = $this->resolveCompany($request);
+
+        if ($company) {
+            $categoryOwned = MkatTanya::where('nid', $request->category_id)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak ditemukan.',
+                ], 404);
+            }
+        }
+
         DB::beginTransaction();
 
         try {
@@ -72,7 +104,7 @@ class AuditQuestionController extends Controller
             $question = Mtanya::create([
                 'nid_kat'    => $request->category_id,
                 'ctanya'     => $request->question,
-                'nurut'  => $nextSequence,
+                'nurut'      => $nextSequence,
                 'factive'    => 1,
                 'created_at' => now(),
             ]);
@@ -123,6 +155,7 @@ class AuditQuestionController extends Controller
             ], 422);
         }
 
+        $company = $this->resolveCompany($request);
         $question = Mtanya::find($id);
 
         if (!$question) {
@@ -132,6 +165,19 @@ class AuditQuestionController extends Controller
             ], 404);
         }
 
+        if ($company) {
+            $categoryOwned = MkatTanya::where('nid', $question->nid_kat)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pertanyaan tidak ditemukan.',
+                ], 404);
+            }
+        }
+
         if ($question->responses()->exists()) {
             return response()->json([
                 'success' => false,
@@ -139,7 +185,7 @@ class AuditQuestionController extends Controller
             ], 409);
         }
 
-        $question->cquest = $request->question;
+        $question->ctanya = $request->question;
         $question->save();
 
         Log::info('Pertanyaan audit diperbarui.', [
@@ -162,8 +208,7 @@ class AuditQuestionController extends Controller
     }
 
     /**
-     * Delete the specified audit question and reorder the remaining
-     * questions within the same category.
+     * Delete the specified audit question and reorder remaining questions.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -171,6 +216,7 @@ class AuditQuestionController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
+        $company = $this->resolveCompany($request);
         $question = Mtanya::find($id);
 
         if (!$question) {
@@ -178,6 +224,19 @@ class AuditQuestionController extends Controller
                 'success' => false,
                 'message' => 'Pertanyaan tidak ditemukan.',
             ], 404);
+        }
+
+        if ($company) {
+            $categoryOwned = MkatTanya::where('nid', $question->nid_kat)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pertanyaan tidak ditemukan.',
+                ], 404);
+            }
         }
 
         if ($question->responses()->exists()) {
@@ -229,8 +288,7 @@ class AuditQuestionController extends Controller
     }
 
     /**
-     * Reorder the questions within a category based on the given order
-     * of question IDs.
+     * Reorder the questions within a category based on question IDs.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -238,7 +296,7 @@ class AuditQuestionController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'category_id'    => 'required|integer|exists:mkat_tanya,nid',
+            'category_id'    => 'required|integer|exists:maudit_kat,nid',
             'question_ids'   => 'required|array|min:1',
             'question_ids.*' => 'required|integer|exists:mtanya,nid',
         ]);
@@ -249,6 +307,21 @@ class AuditQuestionController extends Controller
                 'message' => 'Validasi gagal.',
                 'errors'  => $validator->errors(),
             ], 422);
+        }
+
+        $company = $this->resolveCompany($request);
+
+        if ($company) {
+            $categoryOwned = MkatTanya::where('nid', $request->category_id)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak ditemukan.',
+                ], 404);
+            }
         }
 
         // Pastikan semua question_id benar-benar milik category yang dikirim
