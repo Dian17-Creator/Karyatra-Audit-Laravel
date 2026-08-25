@@ -68,7 +68,7 @@ class AuditQuestionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'category_id' => 'required|integer|exists:maudit_kat,nid',
+            'category_id' => 'required|integer|exists:mkat_tanya,nid',
             'question'    => 'required|string|max:1000',
         ]);
 
@@ -296,7 +296,7 @@ class AuditQuestionController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'category_id'    => 'required|integer|exists:maudit_kat,nid',
+            'category_id'    => 'required|integer|exists:mkat_tanya,nid',
             'question_ids'   => 'required|array|min:1',
             'question_ids.*' => 'required|integer|exists:mtanya,nid',
         ]);
