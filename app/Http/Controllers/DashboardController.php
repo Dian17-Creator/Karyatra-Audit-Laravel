@@ -20,38 +20,40 @@ class DashboardController extends Controller
 
         // Audit Stats
         $katQuery = MkatTanya::query();
+        $tanyaQuery = Mtanya::query();
         $auditQuery = Maudit::query();
 
         if ($company) {
             $katQuery->where('cperusahaan', $company);
+            $tanyaQuery->whereHas('category', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
             $auditQuery->whereHas('department', function ($q) use ($company) {
                 $q->where('cperusahaan', $company);
             });
         }
 
         $totalKategori = $katQuery->count();
-
-        $companyKatIds = $company ? MkatTanya::where('cperusahaan', $company)->pluck('nid') : null;
-        $totalPertanyaan = $companyKatIds ? Mtanya::whereIn('nid_kat', $companyKatIds)->count() : Mtanya::count();
-
+        $totalPertanyaan = $tanyaQuery->count();
         $totalAudit = $auditQuery->count();
 
         // Stock Stats
         $stockKatQuery = MkatBarang::query();
+        $barangQuery = Mbarang::query();
         $opnameQuery = Mopname::query();
 
         if ($company) {
             $stockKatQuery->where('cperusahaan', $company);
+            $barangQuery->whereHas('group', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
             $opnameQuery->whereHas('department', function ($q) use ($company) {
                 $q->where('cperusahaan', $company);
             });
         }
 
         $totalKategoriStok = $stockKatQuery->count();
-
-        $companyStockKatIds = $company ? MkatBarang::where('cperusahaan', $company)->pluck('nid') : null;
-        $totalBarang = $companyStockKatIds ? Mbarang::whereIn('nid_kat', $companyStockKatIds)->count() : Mbarang::count();
-
+        $totalBarang = $barangQuery->count();
         $totalStokOpname = $opnameQuery->count();
 
         // Recent Audits
