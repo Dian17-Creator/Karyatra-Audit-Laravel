@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\AuditCategoryController;
 use App\Http\Controllers\AuditDepartmentController;
 use App\Http\Controllers\AuditQuestionController;
@@ -16,6 +17,21 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
 Route::get('/me', [AuthController::class, 'me']);
+
+// User Profile & Settings API
+Route::prefix('user')->group(function () {
+    Route::post('/profile', [UserController::class, 'updateProfile']);
+    Route::post('/change-password', [UserController::class, 'changePassword']);
+});
+
+// Company User Management API
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::post('/{id}/level', [UserController::class, 'updateLevel']);
+    Route::post('/{id}/delete', [UserController::class, 'destroy']);
+    Route::delete('/{id}', [UserController::class, 'destroy']);
+});
 
 
 //dashboard controller
