@@ -50,4 +50,33 @@ class Mdepartemen extends Model
     {
         return $this->belongsToMany(Mtanya::class, 'tdept_tanya', 'nid_dept', 'nid_tanya');
     }
+
+    /**
+     * Cek apakah departemen sedang digunakan di tabel transaksi/mapping
+     */
+    public function isInUse(): bool
+    {
+        return static::checkInUse($this->nid);
+    }
+
+    /**
+     * Helper static untuk cek penggunaan departemen
+     */
+    public static function checkInUse(int $departmentId): bool
+    {
+        $tables = [
+            'tdept_barang',
+            'tdept_tanya',
+            'maudit',
+            'mopname'
+        ];
+
+        foreach ($tables as $table) {
+            if (\Illuminate\Support\Facades\DB::table($table)->where('nid_dept', $departmentId)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
