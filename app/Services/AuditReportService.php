@@ -17,12 +17,25 @@ class AuditReportService
     /**
      * Get paginated list of audits.
      */
-    public function getList(int $departmentId, string $dateFrom, string $dateTo, int $perPage = 15)
+    public function getList(?int $departmentId, ?string $dateFrom, ?string $dateTo, int $perPage = 15, ?string $company = null)
     {
-        $audits = Maudit::with('department')
-            ->where('nid_dept', $departmentId)
-            ->whereBetween('daudit', [$dateFrom, $dateTo])
-            ->orderBy('daudit', 'desc')
+        $query = Maudit::with('department');
+
+        if ($company) {
+            $query->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
+
+        if (!empty($departmentId) && $departmentId > 0) {
+            $query->where('nid_dept', $departmentId);
+        }
+
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $query->whereBetween('daudit', [$dateFrom, $dateTo]);
+        }
+
+        $audits = $query->orderBy('daudit', 'desc')
             ->orderBy('cdocid', 'desc')
             ->get();
 

@@ -39,12 +39,15 @@ class StockReportController extends Controller
                 ]);
             }
 
+            $company = $this->resolveCompany($request);
+
             $data = $this->stockService->getList(
                 $request->input('department_id'),
                 $request->input('date_from'),
                 $request->input('date_to'),
                 null, // Remove auditor filter to show all records for the department
-                $request->input('page')
+                $request->input('page'),
+                $company
             );
 
             return response()->json([

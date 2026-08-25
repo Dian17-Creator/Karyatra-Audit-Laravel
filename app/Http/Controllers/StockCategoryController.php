@@ -14,25 +14,32 @@ class StockCategoryController extends Controller
     /**
      * GET /api/stock/categories
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $categories = MkatBarang::with(['items' => function ($query) {
-                $query->orderBy('nurut');
-            }])
-                ->orderBy('nid')
+            $company = $this->resolveCompany($request);
+
+            $query = MkatBarang::with(['items' => function ($q) {
+                $q->orderBy('nurut');
+            }]);
+
+            if ($company) {
+                $query->where('cperusahaan', $company);
+            }
+
+            $categories = $query->orderBy('nid')
                 ->get()
                 ->map(function ($cat) {
                     return [
-                        'id' => $cat->nid,
-                        'name' => $cat->cnama,
+                        'id'          => $cat->nid,
+                        'name'        => $cat->cnama,
                         'description' => $cat->cket,
-                        'items' => $cat->items->map(function ($item) {
+                        'items'       => $cat->items->map(function ($item) {
                             return [
-                                'id' => $item->nid,
+                                'id'          => $item->nid,
                                 'category_id' => $item->nid_kat,
-                                'name' => $item->cbarang,
-                                'sequence' => $item->nurut,
+                                'name'        => $item->cbarang,
+                                'sequence'    => $item->nurut,
                             ];
                         }),
                     ];
@@ -41,7 +48,7 @@ class StockCategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data pohon kategori dan barang berhasil diambil.',
-                'data' => $categories,
+                'data'    => $categories,
             ]);
         } catch (\Exception $e) {
             Log::error('Gagal mengambil pohon kategori dan barang: ' . $e->getMessage());
@@ -66,43 +73,27 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $cperusahaan = $request->input('cperusahaan')
-                ?? $request->input('company');
+            $company = $this->resolveCompany($request);
 
-            if (empty($cperusahaan)) {
-                $user = auth()->user() ?? $request->user();
-
-                $userId = $request->input('user_id')
-                    ?? $request->input('auditor_id')
-                    ?? $request->input('nid_auditor')
-                    ?? $request->input('nid_user');
-
-                if (!$user && $userId) {
-                    $user = \App\Models\Auth\Muser::find($userId);
-                }
-
-                if ($user) {
-                    $cperusahaan = $user->cperusahaan ?? $user->ccompany;
-                }
-            }
-
-            if (empty($cperusahaan)) {
-                $firstUser = \App\Models\Auth\Muser::whereNotNull('cperusahaan')->first();
-                $cperusahaan = $firstUser ? $firstUser->cperusahaan : 'Default';
+            if (empty($company)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sesi perusahaan tidak valid. Pengguna/perusahaan tidak ditemukan.'
+                ], 422);
             }
 
             $category = MkatBarang::create([
-                'cnama' => $request->cnama,
-                'cket' => $request->cket,
-                'cperusahaan' => $cperusahaan,
+                'cnama'       => $request->cnama,
+                'cket'        => $request->cket,
+                'cperusahaan' => $company,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Kategori berhasil ditambahkan.',
-                'data' => [
-                    'id' => $category->nid,
-                    'name' => $category->cnama,
+                'data'    => [
+                    'id'          => $category->nid,
+                    'name'        => $category->cnama,
                     'description' => $category->cket,
                 ]
             ], 201);
@@ -132,7 +123,14 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $category = MkatBarang::find($nid);
+            $company = $this->resolveCompany($request);
+
+            $query = MkatBarang::where('nid', $nid);
+            if ($company) {
+                $query->where('cperusahaan', $company);
+            }
+
+            $category = $query->first();
 
             if (!$category) {
                 return response()->json([
@@ -143,15 +141,15 @@ class StockCategoryController extends Controller
 
             $category->update([
                 'cnama' => $cnama,
-                'cket' => $request->cket,
+                'cket'  => $request->cket,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Kategori berhasil diperbarui.',
-                'data' => [
-                    'id' => $category->nid,
-                    'name' => $category->cnama,
+                'data'    => [
+                    'id'          => $category->nid,
+                    'name'        => $category->cnama,
                     'description' => $category->cket,
                 ]
             ]);
@@ -180,7 +178,14 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $category = MkatBarang::find($nid);
+            $company = $this->resolveCompany($request);
+
+            $query = MkatBarang::where('nid', $nid);
+            if ($company) {
+                $query->where('cperusahaan', $company);
+            }
+
+            $category = $query->first();
 
             if (!$category) {
                 return response()->json([
@@ -193,7 +198,7 @@ class StockCategoryController extends Controller
             // yang sudah pernah digunakan dalam transaksi opname (topname_hasil)
             $isUsed = DB::table('mbarang')
                 ->join('topname_hasil', 'topname_hasil.nid_barang', '=', 'mbarang.nid')
-                ->where('mbarang.nid_kat', $nid)
+                ->where('mbarang.nid_kat', $category->nid)
                 ->exists();
 
             if ($isUsed) {
@@ -222,10 +227,17 @@ class StockCategoryController extends Controller
      * GET /api/stock/categories/{categoryId}/items
      * Mengambil semua barang berdasarkan kategori
      */
-    public function getItems($categoryId)
+    public function getItems(Request $request, $categoryId)
     {
         try {
-            $category = MkatBarang::find($categoryId);
+            $company = $this->resolveCompany($request);
+
+            $query = MkatBarang::where('nid', $categoryId);
+            if ($company) {
+                $query->where('cperusahaan', $company);
+            }
+
+            $category = $query->first();
 
             if (!$category) {
                 return response()->json([
@@ -234,29 +246,29 @@ class StockCategoryController extends Controller
                 ], 404);
             }
 
-            $items = Mbarang::where('nid_kat', $categoryId)
+            $items = Mbarang::where('nid_kat', $category->nid)
                 ->orderBy('nurut')
                 ->orderBy('nid')
                 ->get()
                 ->map(function ($item) {
                     return [
-                        'id' => $item->nid,
+                        'id'          => $item->nid,
                         'category_id' => $item->nid_kat,
-                        'name' => $item->cbarang,
-                        'sequence' => $item->nurut,
+                        'name'        => $item->cbarang,
+                        'sequence'    => $item->nurut,
                     ];
                 });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data barang berhasil diambil.',
-                'data' => [
+                'data'    => [
                     'category' => [
-                        'id' => $category->nid,
-                        'name' => $category->cnama,
+                        'id'          => $category->nid,
+                        'name'        => $category->cnama,
                         'description' => $category->cket,
                     ],
-                    'items' => $items,
+                    'items'    => $items,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -288,7 +300,14 @@ class StockCategoryController extends Controller
         }
 
         try {
-            $categoryExists = MkatBarang::where('nid', $nid_kat)->exists();
+            $company = $this->resolveCompany($request);
+
+            $query = MkatBarang::where('nid', $nid_kat);
+            if ($company) {
+                $query->where('cperusahaan', $company);
+            }
+
+            $categoryExists = $query->exists();
             if (!$categoryExists) {
                 return response()->json([
                     'success' => false,
@@ -304,7 +323,7 @@ class StockCategoryController extends Controller
             $item = Mbarang::create([
                 'nid_kat' => $nid_kat,
                 'cbarang' => $cbarang,
-                'nurut' => $nurut,
+                'nurut'   => $nurut,
             ]);
 
             DB::commit();
@@ -312,11 +331,11 @@ class StockCategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Barang berhasil ditambahkan.',
-                'data' => [
-                    'id' => $item->nid,
+                'data'    => [
+                    'id'          => $item->nid,
                     'category_id' => $item->nid_kat,
-                    'name' => $item->cbarang,
-                    'sequence' => $item->nurut,
+                    'name'        => $item->cbarang,
+                    'sequence'    => $item->nurut,
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -345,6 +364,8 @@ class StockCategoryController extends Controller
         }
 
         try {
+            $company = $this->resolveCompany($request);
+
             $item = Mbarang::find($nid);
 
             if (!$item) {
@@ -352,6 +373,20 @@ class StockCategoryController extends Controller
                     'success' => false,
                     'message' => 'Barang tidak ditemukan.'
                 ], 404);
+            }
+
+            // Validasi kepemilikan kategori barang oleh perusahaan
+            if ($company) {
+                $categoryOwned = MkatBarang::where('nid', $item->nid_kat)
+                    ->where('cperusahaan', $company)
+                    ->exists();
+
+                if (!$categoryOwned) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Barang tidak ditemukan.'
+                    ], 404);
+                }
             }
 
             // Validasi Transaksi: pastikan barang belum pernah digunakan dalam opname
@@ -387,20 +422,34 @@ class StockCategoryController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:mkat_barang,nid',
-            'item_ids' => 'required|array|min:1',
-            'item_ids.*' => 'required|integer|exists:mbarang,nid',
+            'item_ids'    => 'required|array|min:1',
+            'item_ids.*'  => 'required|integer|exists:mbarang,nid',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
+        $company = $this->resolveCompany($request);
         $categoryId = $request->category_id;
         $itemIds = $request->item_ids;
+
+        if ($company) {
+            $categoryOwned = MkatBarang::where('nid', $categoryId)
+                ->where('cperusahaan', $company)
+                ->exists();
+
+            if (!$categoryOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak ditemukan.',
+                ], 404);
+            }
+        }
 
         // Pastikan semua barang milik kategori yang dipilih
         $count = Mbarang::where('nid_kat', $categoryId)

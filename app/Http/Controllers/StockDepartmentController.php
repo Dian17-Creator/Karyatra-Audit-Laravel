@@ -21,19 +21,25 @@ class StockDepartmentController extends Controller
      *
      * GET /api/stock/departments
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $departments = Mdepartemen::select(
+        $company = $this->resolveCompany($request);
+
+        $query = Mdepartemen::select(
             'nid as id',
             'cnama as name'
-        )
-            ->orderBy('cnama')
-            ->get();
+        );
+
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $departments = $query->orderBy('cnama')->get();
 
         return response()->json([
             'success' => true,
             'message' => 'Data department berhasil diambil.',
-            'data' => $departments,
+            'data'    => $departments,
         ]);
     }
 
@@ -42,9 +48,16 @@ class StockDepartmentController extends Controller
      *
      * GET /api/stock/departments/{id}/mapping
      */
-    public function mapping($id): JsonResponse
+    public function mapping(Request $request, $id): JsonResponse
     {
-        $department = Mdepartemen::find($id);
+        $company = $this->resolveCompany($request);
+
+        $query = Mdepartemen::where('nid', $id);
+        if ($company) {
+            $query->where('cperusahaan', $company);
+        }
+
+        $department = $query->first();
 
         if (!$department) {
             return response()->json([
@@ -65,17 +78,20 @@ class StockDepartmentController extends Controller
             ->toArray();
 
         /*
-         * Ambil semua kelompok/category barang.
+         * Ambil semua kelompok/category barang milik perusahaan.
          */
-        $categories = MkatBarang::orderBy('cnama')
-            ->get();
+        $catQuery = MkatBarang::orderBy('cnama');
+        if ($company) {
+            $catQuery->where('cperusahaan', $company);
+        }
+        $categories = $catQuery->get();
+        $categoryIds = $categories->pluck('nid')->toArray();
 
         /*
-         * Ambil semua barang.
-         *
-         * Urut berdasarkan nurut kemudian nama barang.
+         * Ambil semua barang dari kategori perusahaan.
          */
-        $items = Mbarang::orderBy('nurut')
+        $items = Mbarang::whereIn('nid_kat', $categoryIds)
+            ->orderBy('nurut')
             ->orderBy('cbarang')
             ->get();
 
@@ -94,10 +110,10 @@ class StockDepartmentController extends Controller
 
             $formattedItems = $categoryItems->map(function ($item) use ($linkedItemIds) {
                 return [
-                    'id' => $item->nid,
-                    'name' => $item->cbarang,
+                    'id'       => $item->nid,
+                    'name'     => $item->cbarang,
                     'sequence' => $item->nurut,
-                    'linked' => in_array(
+                    'linked'   => in_array(
                         $item->nid,
                         $linkedItemIds
                     ),
@@ -105,8 +121,8 @@ class StockDepartmentController extends Controller
             })->values();
 
             $formattedCategories[] = [
-                'id' => $category->nid,
-                'name' => $category->cnama,
+                'id'    => $category->nid,
+                'name'  => $category->cnama,
                 'items' => $formattedItems,
             ];
         }
@@ -114,9 +130,9 @@ class StockDepartmentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data mapping barang berhasil diambil.',
-            'data' => [
+            'data'    => [
                 'department' => [
-                    'id' => $department->nid,
+                    'id'   => $department->nid,
                     'name' => $department->cnama,
                 ],
                 'categories' => $formattedCategories,
@@ -131,15 +147,10 @@ class StockDepartmentController extends Controller
      */
     public function storeMapping(Request $request): JsonResponse
     {
-        /*
-         * Validasi request.
-         */
         $validator = Validator::make($request->all(), [
             'department_id' => 'required|integer|exists:mdepartemen,nid',
-
-            'item_ids' => 'nullable|array',
-
-            'item_ids.*' => [
+            'item_ids'      => 'nullable|array',
+            'item_ids.*'    => [
                 'integer',
                 'exists:mbarang,nid',
             ],
@@ -149,11 +160,25 @@ class StockDepartmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
+        $company = $this->resolveCompany($request);
         $departmentId = (int) $request->department_id;
+
+        $deptQuery = Mdepartemen::where('nid', $departmentId);
+        if ($company) {
+            $deptQuery->where('cperusahaan', $company);
+        }
+        $department = $deptQuery->first();
+
+        if (!$department) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Department tidak ditemukan.',
+            ], 404);
+        }
 
         /*
          * Hilangkan duplicate item ID.
@@ -165,12 +190,7 @@ class StockDepartmentController extends Controller
             ->toArray();
 
         /*
-         * =========================================================
          * CEK AUDIT INVENTORY AKTIF
-         * =========================================================
-         *
-         * Mapping tidak boleh diubah apabila department
-         * sedang digunakan dalam audit inventory.
          */
         $activeAudit = Mopname::where(
             'nid_dept',
@@ -186,9 +206,9 @@ class StockDepartmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Pemetaan barang tidak dapat diubah karena department sedang digunakan dalam audit inventory.',
-                'data' => [
+                'data'    => [
                     'document_id' => $activeAudit->cdocid,
-                    'status' => $activeAudit->cstatus,
+                    'status'      => $activeAudit->cstatus,
                 ],
             ], 409);
         }
@@ -196,20 +216,6 @@ class StockDepartmentController extends Controller
         DB::beginTransaction();
 
         try {
-            /*
-             * Pastikan department masih ada.
-             */
-            $department = Mdepartemen::find($departmentId);
-
-            if (!$department) {
-                DB::rollBack();
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Department tidak ditemukan.',
-                ], 404);
-            }
-
             /*
              * Hapus seluruh mapping lama department.
              */
@@ -226,7 +232,7 @@ class StockDepartmentController extends Controller
 
                 foreach ($itemIds as $itemId) {
                     $mappingData[] = [
-                        'nid_dept' => $departmentId,
+                        'nid_dept'   => $departmentId,
                         'nid_barang' => $itemId,
                     ];
                 }
@@ -251,12 +257,12 @@ class StockDepartmentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Pemetaan barang berhasil disimpan.',
-                'data' => [
+                'data'    => [
                     'department' => [
-                        'id' => $department->nid,
+                        'id'   => $department->nid,
                         'name' => $department->cnama,
                     ],
-                    'item_ids' => $savedItemIds,
+                    'item_ids'    => $savedItemIds,
                     'total_items' => count($savedItemIds),
                 ],
             ]);
@@ -267,8 +273,8 @@ class StockDepartmentController extends Controller
                 'Gagal menyimpan pemetaan barang department.',
                 [
                     'department_id' => $departmentId,
-                    'item_ids' => $itemIds,
-                    'error' => $e->getMessage(),
+                    'item_ids'      => $itemIds,
+                    'error'         => $e->getMessage(),
                 ]
             );
 

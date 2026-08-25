@@ -9,26 +9,59 @@ use App\Models\Audit\Mtanya;
 use App\Models\Stock\MkatBarang;
 use App\Models\Stock\Mbarang;
 use App\Models\Stock\Mopname;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
-    public function summary(): JsonResponse
+    public function summary(Request $request): JsonResponse
     {
+        $company = $this->resolveCompany($request);
+
         // Audit Stats
-        $totalKategori = MkatTanya::count();
-        $totalPertanyaan = Mtanya::count();
-        $totalAudit = Maudit::count();
+        $katQuery = MkatTanya::query();
+        $auditQuery = Maudit::query();
+
+        if ($company) {
+            $katQuery->where('cperusahaan', $company);
+            $auditQuery->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
+
+        $totalKategori = $katQuery->count();
+
+        $companyKatIds = $company ? MkatTanya::where('cperusahaan', $company)->pluck('nid') : null;
+        $totalPertanyaan = $companyKatIds ? Mtanya::whereIn('nid_kat', $companyKatIds)->count() : Mtanya::count();
+
+        $totalAudit = $auditQuery->count();
 
         // Stock Stats
-        $totalKategoriStok = MkatBarang::count();
-        $totalBarang = Mbarang::count();
-        $totalStokOpname = Mopname::count();
+        $stockKatQuery = MkatBarang::query();
+        $opnameQuery = Mopname::query();
 
-        $recentAudits = Maudit::with('department')
-            ->orderBy('nid', 'desc')
-            ->take(5)
-            ->get();
+        if ($company) {
+            $stockKatQuery->where('cperusahaan', $company);
+            $opnameQuery->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
+
+        $totalKategoriStok = $stockKatQuery->count();
+
+        $companyStockKatIds = $company ? MkatBarang::where('cperusahaan', $company)->pluck('nid') : null;
+        $totalBarang = $companyStockKatIds ? Mbarang::whereIn('nid_kat', $companyStockKatIds)->count() : Mbarang::count();
+
+        $totalStokOpname = $opnameQuery->count();
+
+        // Recent Audits
+        $recentAuditQuery = Maudit::with('department')->orderBy('nid', 'desc');
+        if ($company) {
+            $recentAuditQuery->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
+        $recentAudits = $recentAuditQuery->take(5)->get();
 
         $recentActivity = $recentAudits->map(function ($audit) {
             $dateStr = '-';
@@ -36,18 +69,21 @@ class DashboardController extends Controller
                 $dateStr = is_string($audit->daudit) ? date('d M Y', strtotime($audit->daudit)) : $audit->daudit->format('d M Y');
             }
             return [
-                'id' => $audit->nid,
-                'title' => 'Audit ' . ($audit->department->cnama ?? 'Departemen'),
+                'id'       => $audit->nid,
+                'title'    => 'Audit ' . ($audit->department->cnama ?? 'Departemen'),
                 'subtitle' => ($audit->cdocid ?? '-') . ' • ' . $dateStr,
-                'status' => $audit->cstatus ?? 'Draft'
+                'status'   => $audit->cstatus ?? 'Draft'
             ];
         });
 
         // Recent Stock Opname
-        $recentOpnames = Mopname::with('department')
-            ->orderBy('nid', 'desc')
-            ->take(5)
-            ->get();
+        $recentOpnameQuery = Mopname::with('department')->orderBy('nid', 'desc');
+        if ($company) {
+            $recentOpnameQuery->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
+        $recentOpnames = $recentOpnameQuery->take(5)->get();
 
         $recentStockOpname = $recentOpnames->map(function ($opname) {
             $dateStr = '-';
@@ -55,24 +91,24 @@ class DashboardController extends Controller
                 $dateStr = is_string($opname->daudit) ? date('d M Y', strtotime($opname->daudit)) : $opname->daudit->format('d M Y');
             }
             return [
-                'id' => $opname->nid,
-                'title' => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
+                'id'       => $opname->nid,
+                'title'    => 'Stok Opname ' . ($opname->department->cnama ?? 'Departemen'),
                 'subtitle' => ($opname->cdocid ?? '-') . ' • ' . $dateStr,
-                'status' => $opname->cstatus ?? 'Draft'
+                'status'   => $opname->cstatus ?? 'Draft'
             ];
         });
 
         return response()->json([
             'success' => true,
             'message' => 'Dashboard summary berhasil diambil.',
-            'data' => [
-                'total_kategori'   => $totalKategori,
-                'total_pertanyaan' => $totalPertanyaan,
-                'total_audit'      => $totalAudit,
+            'data'    => [
+                'total_kategori'      => $totalKategori,
+                'total_pertanyaan'    => $totalPertanyaan,
+                'total_audit'         => $totalAudit,
                 'total_kategori_stok' => $totalKategoriStok,
-                'total_barang'     => $totalBarang,
-                'total_stok_opname' => $totalStokOpname,
-                'recent_activity'  => $recentActivity,
+                'total_barang'        => $totalBarang,
+                'total_stok_opname'   => $totalStokOpname,
+                'recent_activity'     => $recentActivity,
                 'recent_stock_opname' => $recentStockOpname
             ]
         ]);

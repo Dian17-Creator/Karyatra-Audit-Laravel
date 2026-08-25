@@ -30,13 +30,20 @@ class StockReportService
         ?string $dateFrom = null,
         ?string $dateTo = null,
         ?int $auditorId = null,
-        ?int $page = null
+        ?int $page = null,
+        ?string $company = null
     ) {
         $query = Mopname::with([
             'department',
             'auditor'
         ])
             ->orderBy('started_at', 'desc');
+
+        if ($company) {
+            $query->whereHas('department', function ($q) use ($company) {
+                $q->where('cperusahaan', $company);
+            });
+        }
 
         if ($auditorId) {
             $query->where('nid_auditor', $auditorId);

@@ -42,11 +42,13 @@ class AuditReportController extends Controller
     public function index(AuditListRequest $request)
     {
         try {
+            $company = $this->resolveCompany($request);
             $data = $this->auditService->getList(
-                $request->department_id,
-                $request->date_from,
-                $request->date_to,
-                $request->page ? 15 : 1000 // if page is provided paginate by 15
+                $request->department_id ? (int) $request->department_id : null,
+                $request->date_from ? (string) $request->date_from : null,
+                $request->date_to ? (string) $request->date_to : null,
+                $request->page ? 15 : 1000,
+                $company
             );
 
             return response()->json([
