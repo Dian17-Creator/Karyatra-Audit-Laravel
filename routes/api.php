@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\AuditCategoryController;
 use App\Http\Controllers\AuditDepartmentController;
 use App\Http\Controllers\AuditQuestionController;
@@ -31,6 +32,16 @@ Route::prefix('users')->group(function () {
     Route::post('/{id}/level', [UserController::class, 'updateLevel']);
     Route::post('/{id}/delete', [UserController::class, 'destroy']);
     Route::delete('/{id}', [UserController::class, 'destroy']);
+});
+
+// Department Management API
+Route::prefix('departments')->group(function () {
+    Route::get('/', [DepartmentController::class, 'index']);
+    Route::post('/', [DepartmentController::class, 'store']);
+    Route::post('/{id}/update', [DepartmentController::class, 'update']);
+    Route::put('/{id}', [DepartmentController::class, 'update']);
+    Route::post('/{id}/delete', [DepartmentController::class, 'destroy']);
+    Route::delete('/{id}', [DepartmentController::class, 'destroy']);
 });
 
 
