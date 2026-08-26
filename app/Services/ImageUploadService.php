@@ -92,4 +92,54 @@ class ImageUploadService
         imagedestroy($src);
         imagedestroy($dst);
     }
+
+    /**
+     * Generate a filesystem-safe, unique folder name for a company.
+     * Format: [slug]_[hash6]
+     *
+     * @param string $company
+     * @return string
+     */
+    public function companyFolderName(string $company): string
+    {
+        $company = trim($company);
+
+        $ascii = iconv(
+            'UTF-8',
+            'ASCII//TRANSLIT//IGNORE',
+            $company
+        );
+
+        if ($ascii === false || trim($ascii) === '') {
+            $ascii = $company;
+        }
+
+        $slug = strtolower($ascii);
+
+        $slug = preg_replace(
+            '/[^a-z0-9]+/',
+            '-',
+            $slug
+        );
+
+        $slug = trim($slug, '-');
+
+        if ($slug === '') {
+            $slug = 'company';
+        }
+
+        $slug = substr($slug, 0, 50);
+        $slug = rtrim($slug, '-');
+
+        $hash = substr(
+            hash(
+                'sha256',
+                mb_strtolower($company, 'UTF-8')
+            ),
+            0,
+            6
+        );
+
+        return $slug . '_' . $hash;
+    }
 }

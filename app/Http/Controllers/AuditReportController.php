@@ -174,17 +174,21 @@ class AuditReportController extends Controller
             $audit = Maudit::findOrFail($request->audit_id);
             $cdocid = $audit->cdocid;
 
+            $company = $this->resolveCompany($request);
+            $companyFolder = $this->imageService->companyFolderName($company);
+
             $photo = $request->file('verification_photo');
             $extension = 'jpg'; // We can enforce jpg or use client extension
             $filename = $cdocid . '_verification.' . $extension;
 
-            $uploadDir = public_path('uploads/' . $cdocid);
+            $relativeDir = $companyFolder . '/' . $cdocid;
+            $uploadDir = public_path('uploads/' . $relativeDir);
             if (!File::isDirectory($uploadDir)) {
                 File::makeDirectory($uploadDir, 0775, true, true);
             }
 
             $absolutePath = $uploadDir . '/' . $filename;
-            $relativePath = $cdocid . '/' . $filename;
+            $relativePath = $relativeDir . '/' . $filename;
 
             // Pindahkan file photo asli. (Jika perlu di resize, gunakan ImageUploadService)
             // Sistem lama menggunakan move_uploaded_file tanpa resize untuk verification.
@@ -218,9 +222,11 @@ class AuditReportController extends Controller
     public function uploadPhoto(AuditUploadPhotoRequest $request)
     {
         try {
+            $company = $this->resolveCompany($request);
+            $companyFolder = $this->imageService->companyFolderName($company);
             $responseId = $request->response_id;
 
-            return DB::transaction(function () use ($request, $responseId) {
+            return DB::transaction(function () use ($request, $responseId, $companyFolder) {
                 $responseInfo = TauditHasil::with(['audit', 'question'])->findOrFail($responseId);
                 $audit = $responseInfo->audit;
                 $question = $responseInfo->question;
@@ -232,14 +238,15 @@ class AuditReportController extends Controller
 
                 $nextSequence = TauditFoto::where('nid_hasil', $responseId)->max('nurut') + 1;
 
-                $uploadDir = public_path('uploads/' . $audit->cdocid);
+                $relativeDir = $companyFolder . '/' . $audit->cdocid;
+                $uploadDir = public_path('uploads/' . $relativeDir);
                 if (!File::isDirectory($uploadDir)) {
                     File::makeDirectory($uploadDir, 0775, true, true);
                 }
 
                 $filename = $audit->cdocid . '_' . $question->nid_kat . '_' . $question->nid . '_' . $nextSequence . '.jpg';
                 $absolutePath = $uploadDir . '/' . $filename;
-                $relativePath = $audit->cdocid . '/' . $filename;
+                $relativePath = $relativeDir . '/' . $filename;
 
                 // Menggunakan ImageUploadService (resize, fix exif, compress)
                 $this->imageService->optimizeAndSave(

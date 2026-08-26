@@ -11,7 +11,7 @@ use App\Services\StockReportService;
 
 class StockReportController extends Controller
 {
-    protected $stockService;
+    protected StockReportService $stockService;
 
     public function __construct(StockReportService $stockService)
     {
@@ -122,7 +122,7 @@ class StockReportController extends Controller
     /**
      * Load Detail Stock Opname
      */
-    public function show($id)
+    public function show(int $id)
     {
         try {
             $data = $this->stockService->getDetail($id);
@@ -236,10 +236,13 @@ class StockReportController extends Controller
         ]);
 
         try {
+            $company = $this->resolveCompany($request);
+
             $data = $this->stockService->uploadPhoto(
                 $request->response_id,
                 $request->file('photo'),
-                $request->remark
+                $request->remark,
+                $company
             );
 
             return response()->json([
@@ -328,9 +331,6 @@ class StockReportController extends Controller
         }
     }
 
-    /**
-     * Final Submit Stock Opname
-     */
     public function submit(Request $request)
     {
         $request->validate([
@@ -340,10 +340,13 @@ class StockReportController extends Controller
         ]);
 
         try {
+            $company = $this->resolveCompany($request);
+
             $data = $this->stockService->submitStockOpname(
                 $request->audit_id,
                 $request->auditee_name,
-                $request->file('verification_photo')
+                $request->file('verification_photo'),
+                $company
             );
 
             return response()->json([
@@ -384,7 +387,7 @@ class StockReportController extends Controller
             set_time_limit(300);
 
             $data = $this->stockService->getDetail($request->audit_id);
-            
+
             $header = $data['header'];
             if ($header['status'] !== 'Submitted') {
                 return response()->json([
@@ -398,7 +401,12 @@ class StockReportController extends Controller
             $pdf->render();
             $canvas = $pdf->getDomPDF()->getCanvas();
             $canvas->page_text(
-                530, 815, "{PAGE_NUM} / {PAGE_COUNT}", null, 8, [0.27, 0.27, 0.27]
+                530,
+                815,
+                "{PAGE_NUM} / {PAGE_COUNT}",
+                null,
+                8,
+                [0.27, 0.27, 0.27]
             );
 
             $pdfData = $pdf->output();
