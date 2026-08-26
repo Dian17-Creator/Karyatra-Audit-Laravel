@@ -323,12 +323,12 @@ class StockReportService
         return true;
     }
 
-    public function uploadPhoto(int $responseId, UploadedFile $photo, ?string $remark = null)
+    public function uploadPhoto(int $responseId, UploadedFile $photo, ?string $remark = null, ?string $company = null)
     {
-        return DB::transaction(function () use ($responseId, $photo, $remark) {
+        return DB::transaction(function () use ($responseId, $photo, $remark, $company) {
             $responseInfo = TopnameHasil::findOrFail($responseId);
 
-            $audit = Mopname::where('nid', $responseInfo->nid_opname)->firstOrFail();
+            $audit = Mopname::with('department')->where('nid', $responseInfo->nid_opname)->firstOrFail();
 
             if ($audit->cstatus === 'Submitted') {
                 throw new Exception("Stok opname sudah disubmit, tidak bisa mengunggah foto.", 403);
@@ -342,7 +342,14 @@ class StockReportService
             $nextSequence = TopnameFoto::where('nid_hasil', $responseInfo->nid)->max('nurut') ?? 0;
             $nextSequence++;
 
-            $uploadDir = public_path('uploads/' . $audit->cdocid);
+            if (!$company && $audit->department) {
+                $company = $audit->department->cperusahaan;
+            }
+
+            $companyFolder = $company ? $this->imageService->companyFolderName($company) : null;
+            $relativeDir = $companyFolder ? ($companyFolder . '/' . $audit->cdocid) : $audit->cdocid;
+
+            $uploadDir = public_path('uploads/' . $relativeDir);
             if (!File::isDirectory($uploadDir)) {
                 File::makeDirectory($uploadDir, 0775, true, true);
             }
@@ -354,7 +361,7 @@ class StockReportService
             $filename = $audit->cdocid . '_' . $groupId . '_' . $item->nid . '_' . $nextSequence . '.' . $extension;
 
             $absolutePath = $uploadDir . '/' . $filename;
-            $relativePath = $audit->cdocid . '/' . $filename;
+            $relativePath = $relativeDir . '/' . $filename;
 
             $this->imageService->optimizeAndSave(
                 $photo->getRealPath(),
@@ -421,10 +428,10 @@ class StockReportService
         });
     }
 
-    public function submitStockOpname(int $auditId, string $auditeeName, UploadedFile $verificationPhoto)
+    public function submitStockOpname(int $auditId, string $auditeeName, UploadedFile $verificationPhoto, ?string $company = null)
     {
-        return DB::transaction(function () use ($auditId, $auditeeName, $verificationPhoto) {
-            $audit = Mopname::where('nid', $auditId)
+        return DB::transaction(function () use ($auditId, $auditeeName, $verificationPhoto, $company) {
+            $audit = Mopname::with('department')->where('nid', $auditId)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -450,16 +457,23 @@ class StockReportService
                 );
             }
 
+            if (!$company && $audit->department) {
+                $company = $audit->department->cperusahaan;
+            }
+
+            $companyFolder = $company ? $this->imageService->companyFolderName($company) : null;
+            $relativeDir = $companyFolder ? ($companyFolder . '/' . $audit->cdocid) : $audit->cdocid;
+
             $extension = 'jpg';
             $filename = $audit->cdocid . '_verification.' . $extension;
 
-            $uploadDir = public_path('uploads/' . $audit->cdocid);
+            $uploadDir = public_path('uploads/' . $relativeDir);
             if (!File::isDirectory($uploadDir)) {
                 File::makeDirectory($uploadDir, 0775, true, true);
             }
 
             $absolutePath = $uploadDir . '/' . $filename;
-            $relativePath = $audit->cdocid . '/' . $filename;
+            $relativePath = $relativeDir . '/' . $filename;
 
             $this->imageService->optimizeAndSave(
                 $verificationPhoto->getRealPath(),
