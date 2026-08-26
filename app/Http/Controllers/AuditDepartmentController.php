@@ -151,6 +151,10 @@ class AuditDepartmentController extends Controller
      */
     public function storeMapping(Request $request): JsonResponse
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'department_id'  => 'required|integer|exists:mdepartemen,nid',
             'question_ids'   => 'nullable|array',

@@ -65,6 +65,10 @@ class StockCategoryController extends Controller
      */
     public function storeCategory(Request $request)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         if (empty($request->cnama)) {
             return response()->json([
                 'success' => false,
@@ -112,6 +116,10 @@ class StockCategoryController extends Controller
      */
     public function updateCategory(Request $request, $id = null)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $nid = $id ?? $request->nid;
         $cnama = $request->cnama;
 
@@ -168,6 +176,10 @@ class StockCategoryController extends Controller
      */
     public function destroyCategory(Request $request, $id = null)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $nid = $id ?? $request->nid;
 
         if (empty($nid)) {
@@ -289,6 +301,10 @@ class StockCategoryController extends Controller
      */
     public function storeItem(Request $request)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $nid_kat = $request->nid_kat ?? $request->nid_grp ?? $request->category_id;
         $cbarang = $request->cbarang ?? $request->citemname ?? $request->name;
 
@@ -354,6 +370,10 @@ class StockCategoryController extends Controller
      */
     public function destroyItem(Request $request, $id = null)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $nid = $id ?? $request->nid;
 
         if (empty($nid)) {
@@ -420,6 +440,10 @@ class StockCategoryController extends Controller
      */
     public function reorderItems(Request $request)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:mkat_barang,nid',
             'item_ids'    => 'required|array|min:1',

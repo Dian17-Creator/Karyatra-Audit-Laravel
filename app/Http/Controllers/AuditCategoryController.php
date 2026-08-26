@@ -46,6 +46,10 @@ class AuditCategoryController extends Controller
      */
     public function store(Request $request)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'name'        => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
@@ -90,6 +94,10 @@ class AuditCategoryController extends Controller
      */
     public function update(Request $request, int|string $id)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         Log::info('UPDATE KATEGORI AUDIT', [
             'id'   => $id,
             'data' => $request->all(),
@@ -144,6 +152,10 @@ class AuditCategoryController extends Controller
      */
     public function destroy(Request $request, int|string $id)
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         Log::info('DELETE KATEGORI AUDIT', [
             'id' => $id,
         ]);

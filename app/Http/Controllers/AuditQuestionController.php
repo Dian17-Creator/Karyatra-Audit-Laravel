@@ -67,6 +67,10 @@ class AuditQuestionController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:mkat_tanya,nid',
             'question'    => 'required|string|max:1000',
@@ -143,6 +147,10 @@ class AuditQuestionController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'question' => 'required|string|max:1000',
         ]);
@@ -216,6 +224,10 @@ class AuditQuestionController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $company = $this->resolveCompany($request);
         $question = Mtanya::find($id);
 
@@ -295,6 +307,10 @@ class AuditQuestionController extends Controller
      */
     public function reorder(Request $request): JsonResponse
     {
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
+        }
+
         $validator = Validator::make($request->all(), [
             'category_id'    => 'required|integer|exists:mkat_tanya,nid',
             'question_ids'   => 'required|array|min:1',
