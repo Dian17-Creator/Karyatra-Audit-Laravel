@@ -101,6 +101,11 @@ class Muser extends Authenticatable
         return (bool) $this->fowner || strtolower(trim((string) $this->clevel)) === 'admin';
     }
 
+    public function isAuditor(): bool
+    {
+        return !$this->isOwner() && strtolower(trim((string) $this->clevel)) === 'audit';
+    }
+
     public function isAudit(): bool
     {
         return (bool) $this->fowner || in_array(strtolower(trim((string) $this->clevel)), ['admin', 'audit']);

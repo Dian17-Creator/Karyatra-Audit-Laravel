@@ -285,7 +285,7 @@ class UserController extends Controller
         if (!$owner || !$owner->isOwner()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Fitur ini hanya dapat diakses oleh Pemilik (Owner) perusahaan.'
+                'message' => 'Akses ditolak.'
             ], 403);
         }
 
@@ -383,7 +383,7 @@ class UserController extends Controller
         if (!$owner || !$owner->isOwner()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Fitur ini hanya dapat diakses oleh Pemilik (Owner) perusahaan.'
+                'message' => 'Akses ditolak.'
             ], 403);
         }
 
@@ -451,7 +451,7 @@ class UserController extends Controller
         if (!$owner || !$owner->isOwner()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Fitur ini hanya dapat diakses oleh Pemilik (Owner) perusahaan.'
+                'message' => 'Akses ditolak.'
             ], 403);
         }
 

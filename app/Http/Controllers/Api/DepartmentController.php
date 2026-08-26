@@ -118,12 +118,8 @@ class DepartmentController extends Controller
             ], 404);
         }
 
-        // Cek Hak Akses: Hanya Owner / Admin
-        if (!$currentUser->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki akses untuk mengelola departemen.'
-            ], 403);
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
         }
 
         $company = $currentUser->cperusahaan;
@@ -209,11 +205,8 @@ class DepartmentController extends Controller
 
         $currentUser = Muser::where('nid', $userId)->whereNull('dnonactive')->first();
 
-        if (!$currentUser || !$currentUser->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki akses untuk mengelola departemen.'
-            ], 403);
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
         }
 
         $company = $currentUser->cperusahaan;
@@ -284,11 +277,8 @@ class DepartmentController extends Controller
 
         $currentUser = Muser::where('nid', $userId)->whereNull('dnonactive')->first();
 
-        if (!$currentUser || !$currentUser->isAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak memiliki akses untuk mengelola departemen.'
-            ], 403);
+        if ($forbidden = $this->authorizeAdmin($request)) {
+            return $forbidden;
         }
 
         $company = $currentUser->cperusahaan;
