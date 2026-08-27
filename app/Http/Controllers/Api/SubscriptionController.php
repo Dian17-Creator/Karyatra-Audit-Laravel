@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Auth\Muser;
 use App\Models\Subscription\MsubscriptionPlan;
 use App\Models\Subscription\Tsubscription;
+use App\Services\ImageUploadService;
 use App\Services\SubscriptionService;
 use Exception;
 use Illuminate\Http\Request;
@@ -14,10 +15,12 @@ use Illuminate\Support\Facades\DB;
 class SubscriptionController extends Controller
 {
     protected SubscriptionService $subscriptionService;
+    protected ImageUploadService $imageService;
 
-    public function __construct(SubscriptionService $subscriptionService)
+    public function __construct(SubscriptionService $subscriptionService, ImageUploadService $imageService)
     {
         $this->subscriptionService = $subscriptionService;
+        $this->imageService = $imageService;
     }
 
     /**
@@ -142,13 +145,19 @@ class SubscriptionController extends Controller
                     throw new Exception("Anda sudah memiliki pengajuan langganan yang sedang diproses (pending).");
                 }
 
-                // Simpan berkas ke storage/app/private/subscription_proofs/{company_hash}/owner_{id}/
-                $companyHash = md5($user->cperusahaan);
-                $relativeDir = "subscription_proofs/{$companyHash}/owner_{$user->nid}";
+                // Format direktori & nama berkas bukti pembayaran sesuai konvensi Auditra
+                $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
+                $ownerFolder   = 'owner_' . $user->nid;
+                $relativeDir   = "subscription_proofs/{$companyFolder}/{$ownerFolder}";
 
                 $file = $request->file('payment_proof');
-                $filename = 'proof_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $storedPath = $file->storeAs($relativeDir, $filename, 'local');
+                $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+                $filename = bin2hex(random_bytes(24)) . '.' . $extension;
+                
+                $file->storeAs($relativeDir, $filename, 'local');
+
+                // Kolom DB cpayment_proof hanya menyimpan relatif path dari root proof (tanpa prefix subscription_proofs/)
+                $cpaymentProof = "{$companyFolder}/{$ownerFolder}/{$filename}";
 
                 $subscription = Tsubscription::create([
                     'nid_owner'        => $user->nid,
@@ -157,7 +166,7 @@ class SubscriptionController extends Controller
                     'nduration_months' => $plan->nduration_months,
                     'namount'          => $plan->nprice,
                     'cstatus'          => 'pending',
-                    'cpayment_proof'   => $storedPath,
+                    'cpayment_proof'   => $cpaymentProof,
                     'cpayment_ref'     => $request->payment_ref ?? null,
                 ]);
 
