@@ -8,14 +8,17 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
 use App\Services\StockReportService;
+use App\Services\SubscriptionService;
 
 class StockReportController extends Controller
 {
     protected StockReportService $stockService;
+    protected SubscriptionService $subscriptionService;
 
-    public function __construct(StockReportService $stockService)
+    public function __construct(StockReportService $stockService, SubscriptionService $subscriptionService)
     {
         $this->stockService = $stockService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     /**
@@ -154,6 +157,14 @@ class StockReportController extends Controller
         set_time_limit(300);
 
         try {
+            $user = $this->resolveUser(request());
+            if ($user && !$this->subscriptionService->isPro($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fitur cetak / export PDF hanya tersedia untuk pengguna paket Pro.'
+                ], 403);
+            }
+
             $data = $this->stockService->getDetail($id);
 
             // Render view khusus stok opname
@@ -236,6 +247,17 @@ class StockReportController extends Controller
         ]);
 
         try {
+            $user = $this->resolveUser($request);
+            if ($user) {
+                $policy = $this->subscriptionService->getEvidencePhotoUploadPolicy($user, 'opname', (int) $request->response_id);
+                if (!$policy['allowed']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $policy['reason']
+                    ], 400);
+                }
+            }
+
             $company = $this->resolveCompany($request);
 
             $data = $this->stockService->uploadPhoto(
