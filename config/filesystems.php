@@ -60,6 +60,13 @@ return [
             'report' => false,
         ],
 
+        'subscription_proofs' => [
+            'driver' => 'local',
+            'root' => env('SUBSCRIPTION_PROOF_PATH', storage_path('app/private/subscription-proofs')),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*
