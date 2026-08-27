@@ -146,16 +146,15 @@ class SubscriptionController extends Controller
                     throw new Exception("Anda sudah memiliki pengajuan langganan yang sedang diproses (pending).");
                 }
 
-                // Format direktori & nama berkas bukti pembayaran (mirip Audit & Opname, namun di private storage)
+                // Format direktori & nama berkas bukti pembayaran di public uploads agar dapat diakses oleh legacy script & web
                 $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
                 $ownerFolder   = 'owner_' . $user->nid;
                 $relativeDir   = $companyFolder . '/' . $ownerFolder;
 
-                $proofRoot = env('SUBSCRIPTION_PROOF_PATH', storage_path('app/private/subscription-proofs'));
-                $targetDir = rtrim($proofRoot, '/\\') . '/' . $relativeDir;
+                $uploadDir = public_path('uploads/subscription_proofs/' . $relativeDir);
 
-                if (!File::isDirectory($targetDir)) {
-                    File::makeDirectory($targetDir, 0775, true, true);
+                if (!File::isDirectory($uploadDir)) {
+                    File::makeDirectory($uploadDir, 0775, true, true);
                 }
 
                 $file = $request->file('payment_proof');
@@ -163,7 +162,7 @@ class SubscriptionController extends Controller
                 $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
                 $filename = bin2hex(random_bytes(24)) . '.' . $extension;
 
-                $absolutePath = $targetDir . '/' . $filename;
+                $absolutePath = $uploadDir . '/' . $filename;
                 $relativePath = $relativeDir . '/' . $filename;
 
                 if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
@@ -175,7 +174,7 @@ class SubscriptionController extends Controller
                     );
                 } else {
                     // Berkas PDF disimpan langsung
-                    $file->move($targetDir, $filename);
+                    $file->move($uploadDir, $filename);
                 }
 
                 $subscription = Tsubscription::create([
