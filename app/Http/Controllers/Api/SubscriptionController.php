@@ -148,15 +148,16 @@ class SubscriptionController extends Controller
                 // Format direktori & nama berkas bukti pembayaran sesuai konvensi Auditra
                 $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
                 $ownerFolder   = 'owner_' . $user->nid;
-                $relativeDir   = "subscription_proofs/{$companyFolder}/{$ownerFolder}";
+                $relativeDir   = "{$companyFolder}/{$ownerFolder}";
 
                 $file = $request->file('payment_proof');
                 $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
                 $filename = bin2hex(random_bytes(24)) . '.' . $extension;
                 
-                $file->storeAs($relativeDir, $filename, 'local');
+                // Simpan ke disk 'subscription_proofs' -> /var/www/shared/auditra/private/subscription-proofs/{company_folder}/owner_{id}/{filename}
+                $file->storeAs($relativeDir, $filename, 'subscription_proofs');
 
-                // Kolom DB cpayment_proof hanya menyimpan relatif path dari root proof (tanpa prefix subscription_proofs/)
+                // Kolom DB cpayment_proof menyimpan relatif path dari root proof
                 $cpaymentProof = "{$companyFolder}/{$ownerFolder}/{$filename}";
 
                 $subscription = Tsubscription::create([
