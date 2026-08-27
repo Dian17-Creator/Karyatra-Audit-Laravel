@@ -11,6 +11,7 @@ use App\Services\SubscriptionService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class SubscriptionController extends Controller
 {
@@ -145,20 +146,37 @@ class SubscriptionController extends Controller
                     throw new Exception("Anda sudah memiliki pengajuan langganan yang sedang diproses (pending).");
                 }
 
-                // Format direktori & nama berkas bukti pembayaran sesuai konvensi Auditra
+                // Format direktori & nama berkas bukti pembayaran (mirip Audit & Opname, namun di private storage)
                 $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
                 $ownerFolder   = 'owner_' . $user->nid;
-                $relativeDir   = "{$companyFolder}/{$ownerFolder}";
+                $relativeDir   = $companyFolder . '/' . $ownerFolder;
+
+                $proofRoot = env('SUBSCRIPTION_PROOF_PATH', storage_path('app/private/subscription-proofs'));
+                $targetDir = rtrim($proofRoot, '/\\') . '/' . $relativeDir;
+
+                if (!File::isDirectory($targetDir)) {
+                    File::makeDirectory($targetDir, 0775, true, true);
+                }
 
                 $file = $request->file('payment_proof');
+                $mime = $file->getMimeType();
                 $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
                 $filename = bin2hex(random_bytes(24)) . '.' . $extension;
-                
-                // Simpan ke disk 'subscription_proofs' -> /var/www/shared/auditra/private/subscription-proofs/{company_folder}/owner_{id}/{filename}
-                $file->storeAs($relativeDir, $filename, 'subscription_proofs');
 
-                // Kolom DB cpayment_proof menyimpan relatif path dari root proof
-                $cpaymentProof = "{$companyFolder}/{$ownerFolder}/{$filename}";
+                $absolutePath = $targetDir . '/' . $filename;
+                $relativePath = $relativeDir . '/' . $filename;
+
+                if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
+                    // Kompresi dan optimasi gambar seperti foto Audit & Opname
+                    $this->imageService->optimizeAndSave(
+                        $file->getRealPath(),
+                        $absolutePath,
+                        $mime
+                    );
+                } else {
+                    // Berkas PDF disimpan langsung
+                    $file->move($targetDir, $filename);
+                }
 
                 $subscription = Tsubscription::create([
                     'nid_owner'        => $user->nid,
@@ -167,7 +185,7 @@ class SubscriptionController extends Controller
                     'nduration_months' => $plan->nduration_months,
                     'namount'          => $plan->nprice,
                     'cstatus'          => 'pending',
-                    'cpayment_proof'   => $cpaymentProof,
+                    'cpayment_proof'   => $relativePath,
                     'cpayment_ref'     => $request->payment_ref ?? null,
                 ]);
 
