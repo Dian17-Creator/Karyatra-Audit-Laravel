@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\Internal\SubscriptionReviewController;
+use App\Http\Controllers\Api\Internal\SubscriptionPlanManageController;
 use App\Http\Controllers\AuditCategoryController;
 use App\Http\Controllers\AuditDepartmentController;
 use App\Http\Controllers\AuditQuestionController;
@@ -123,3 +126,21 @@ Route::prefix('stock/opname')->group(function () {
     Route::post('/submit', [StockReportController::class, 'submit']);
     Route::post('/send-email', [StockReportController::class, 'sendEmail']);
 });
+
+// CLIENT SUBSCRIPTION SYSTEM API
+Route::prefix('subscription')->group(function () {
+    Route::get('/state', [SubscriptionController::class, 'state']);
+    Route::get('/plans', [SubscriptionController::class, 'plans']);
+    Route::post('/request', [SubscriptionController::class, 'request']);
+});
+
+// BACKOFFICE INTERNAL SUBSCRIPTION API
+Route::prefix('internal/subscription')->group(function () {
+    Route::post('/review', [SubscriptionReviewController::class, 'review']);
+    Route::get('/plans', [SubscriptionPlanManageController::class, 'index']);
+    Route::post('/plans', [SubscriptionPlanManageController::class, 'store']);
+    Route::put('/plans/{id}', [SubscriptionPlanManageController::class, 'update']);
+    Route::patch('/plans/{id}/toggle', [SubscriptionPlanManageController::class, 'toggle']);
+    Route::delete('/plans/{id}', [SubscriptionPlanManageController::class, 'destroy']);
+});
+

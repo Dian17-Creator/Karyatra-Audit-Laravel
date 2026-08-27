@@ -16,6 +16,7 @@ use App\Models\Audit\TauditFoto;
 use App\Models\Audit\TauditHasil;
 use App\Services\AuditReportService;
 use App\Services\ImageUploadService;
+use App\Services\SubscriptionService;
 use App\Mail\ReportMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
@@ -29,11 +30,16 @@ class AuditReportController extends Controller
 {
     protected AuditReportService $auditService;
     protected ImageUploadService $imageService;
+    protected SubscriptionService $subscriptionService;
 
-    public function __construct(AuditReportService $auditService, ImageUploadService $imageService)
-    {
+    public function __construct(
+        AuditReportService $auditService,
+        ImageUploadService $imageService,
+        SubscriptionService $subscriptionService
+    ) {
         $this->auditService = $auditService;
         $this->imageService = $imageService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     /**
@@ -94,6 +100,14 @@ class AuditReportController extends Controller
         set_time_limit(300);
 
         try {
+            $user = $this->resolveUser(request());
+            if ($user && !$this->subscriptionService->isPro($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fitur cetak / export PDF hanya tersedia untuk pengguna paket Pro.'
+                ], 403);
+            }
+
             $data = $this->auditService->getDetail($id);
             $pdf = Pdf::loadView('audit.pdf-report', $data);
 
@@ -222,6 +236,17 @@ class AuditReportController extends Controller
     public function uploadPhoto(AuditUploadPhotoRequest $request)
     {
         try {
+            $user = $this->resolveUser($request);
+            if ($user) {
+                $policy = $this->subscriptionService->getEvidencePhotoUploadPolicy($user, 'audit', (int) $request->response_id);
+                if (!$policy['allowed']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $policy['reason']
+                    ], 400);
+                }
+            }
+
             $company = $this->resolveCompany($request);
             $companyFolder = $this->imageService->companyFolderName($company);
             $responseId = $request->response_id;
