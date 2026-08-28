@@ -99,6 +99,17 @@ class AuditQuestionController extends Controller
             }
         }
 
+        $user = $this->resolveUser($request);
+        if ($user && $user->isTrial()) {
+            $questionCount = Mtanya::where('nid_kat', $request->category_id)->count();
+            if ($questionCount >= 3) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas masa Trial tercapai. Mode Trial hanya dapat membuat maksimal 3 Pertanyaan per kategori. Silakan lakukan verifikasi email owner.'
+                ], 400);
+            }
+        }
+
         DB::beginTransaction();
 
         try {

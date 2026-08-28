@@ -190,4 +190,57 @@ class SubscriptionService
             'reason'         => null,
         ];
     }
+
+    /**
+     * Pengecekan limit pembuatan dokumen Audit baru (Trial: max 1)
+     */
+    public function canCreateAudit(Muser $user): array
+    {
+        $owner = $this->getCompanyOwner($user);
+        if ($owner->isTrial()) {
+            if ($owner->ntrialauditcreated >= 1) {
+                return [
+                    'allowed' => false,
+                    'message' => 'Batas masa Trial tercapai. Pengguna Trial hanya dapat membuat maksimal 1 dokumen Audit. Silakan lakukan verifikasi email owner.'
+                ];
+            }
+        }
+        return ['allowed' => true, 'message' => null];
+    }
+
+    /**
+     * Pengecekan limit pembuatan dokumen Stock Opname baru (Trial: max 1)
+     */
+    public function canCreateStockOpname(Muser $user): array
+    {
+        $owner = $this->getCompanyOwner($user);
+        if ($owner->isTrial()) {
+            if ($owner->ntrialopnamecreated >= 1) {
+                return [
+                    'allowed' => false,
+                    'message' => 'Batas masa Trial tercapai. Pengguna Trial hanya dapat membuat maksimal 1 dokumen Stok Opname. Silakan lakukan verifikasi email owner.'
+                ];
+            }
+        }
+        return ['allowed' => true, 'message' => null];
+    }
+
+    /**
+     * Increment counter pembuatan Audit / Opname saat Trial
+     */
+    public function recordAuditCreated(Muser $user): void
+    {
+        $owner = $this->getCompanyOwner($user);
+        if ($owner->isTrial()) {
+            $owner->increment('ntrialauditcreated');
+        }
+    }
+
+    public function recordStockOpnameCreated(Muser $user): void
+    {
+        $owner = $this->getCompanyOwner($user);
+        if ($owner->isTrial()) {
+            $owner->increment('ntrialopnamecreated');
+        }
+    }
 }

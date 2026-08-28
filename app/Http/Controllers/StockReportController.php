@@ -81,6 +81,17 @@ class StockReportController extends Controller
         ]);
 
         try {
+            $user = $this->resolveUser($request);
+            if ($user) {
+                $check = $this->subscriptionService->canCreateStockOpname($user);
+                if (!$check['allowed']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $check['message']
+                    ], 400);
+                }
+            }
+
             // Cek auditor_id atau nid_auditor dari request
             $auditorId = $request->input('auditor_id') ?? $request->input('nid_auditor');
 
@@ -101,6 +112,10 @@ class StockReportController extends Controller
             $departmentId = $request->department_id;
 
             $data = $this->stockService->startStockOpname($departmentId, $auditorId);
+
+            if ($user && empty($data['is_existing'])) {
+                $this->subscriptionService->recordStockOpnameCreated($user);
+            }
 
             $message = $data['is_existing'] ? 'Existing audit found.' : 'Dokumen stok opname berhasil dibuat.';
             $status = $data['is_existing'] ? 200 : 201;
@@ -405,6 +420,14 @@ class StockReportController extends Controller
         ]);
 
         try {
+            $user = $this->resolveUser($request);
+            if ($user && !$this->subscriptionService->isPro($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fitur cetak / kirim laporan PDF via email hanya tersedia untuk pengguna paket Pro.'
+                ], 403);
+            }
+
             ini_set('memory_limit', '512M');
             set_time_limit(300);
 
