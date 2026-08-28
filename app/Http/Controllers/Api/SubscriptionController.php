@@ -146,12 +146,11 @@ class SubscriptionController extends Controller
                     throw new Exception("Anda sudah memiliki pengajuan langganan yang sedang diproses (pending).");
                 }
 
-                // Format direktori & nama berkas bukti pembayaran di public uploads agar dapat diakses oleh legacy script & web
+                // Format direktori bukti pembayaran: auditra/private/subscription-proofs/{companyFolder}
                 $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
-                $ownerFolder   = 'owner_' . $user->nid;
-                $relativeDir   = $companyFolder . '/' . $ownerFolder;
+                $relativeDir   = 'auditra/private/subscription-proofs/' . $companyFolder;
 
-                $uploadDir = public_path('uploads/subscription_proofs/' . $relativeDir);
+                $uploadDir = public_path($relativeDir);
 
                 if (!File::isDirectory($uploadDir)) {
                     File::makeDirectory($uploadDir, 0775, true, true);
