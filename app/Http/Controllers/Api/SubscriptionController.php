@@ -146,11 +146,13 @@ class SubscriptionController extends Controller
                     throw new Exception("Anda sudah memiliki pengajuan langganan yang sedang diproses (pending).");
                 }
 
-                // Format direktori bukti pembayaran: auditra/private/subscription-proofs/{companyFolder}
+                // Format direktori & nama berkas
                 $companyFolder = $this->imageService->companyFolderName($user->cperusahaan);
-                $relativeDir   = 'auditra/private/subscription-proofs/' . $companyFolder;
+                $ownerFolder   = 'owner_' . $user->nid;
+                $subPath       = $companyFolder . '/' . $ownerFolder;
 
-                $uploadDir = public_path($relativeDir);
+                // Path fisik file di shared server via symlink uploads/ -> /var/www/shared/
+                $uploadDir = public_path('uploads/auditra/private/subscription-proofs/' . $subPath);
 
                 if (!File::isDirectory($uploadDir)) {
                     File::makeDirectory($uploadDir, 0775, true, true);
@@ -161,8 +163,8 @@ class SubscriptionController extends Controller
                 $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
                 $filename = bin2hex(random_bytes(24)) . '.' . $extension;
 
-                $absolutePath = $uploadDir . '/' . $filename;
-                $relativePath = $relativeDir . '/' . $filename;
+                $absolutePath   = $uploadDir . '/' . $filename;
+                $dbRelativePath = $subPath . '/' . $filename; // Tersimpan di DB: git_9a881b/owner_16/filename.jpg
 
                 if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
                     // Kompresi dan optimasi gambar seperti foto Audit & Opname
@@ -183,7 +185,7 @@ class SubscriptionController extends Controller
                     'nduration_months' => $plan->nduration_months,
                     'namount'          => $plan->nprice,
                     'cstatus'          => 'pending',
-                    'cpayment_proof'   => $relativePath,
+                    'cpayment_proof'   => $dbRelativePath,
                     'cpayment_ref'     => $request->payment_ref ?? null,
                 ]);
 
