@@ -71,6 +71,17 @@ class AuditCategoryController extends Controller
             ], 422);
         }
 
+        $user = $this->resolveUser($request);
+        if ($user && $user->isTrial()) {
+            $catCount = MkatTanya::where('cperusahaan', $company)->count();
+            if ($catCount >= 3) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas masa Trial tercapai. Mode Trial hanya dapat membuat maksimal 3 Kategori Audit. Silakan lakukan verifikasi email owner.'
+                ], 400);
+            }
+        }
+
         $category = MkatTanya::create([
             'cnama'       => $request->name,
             'cket'        => $request->description,

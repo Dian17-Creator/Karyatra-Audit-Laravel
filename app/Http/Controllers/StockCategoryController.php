@@ -86,6 +86,17 @@ class StockCategoryController extends Controller
                 ], 422);
             }
 
+            $user = $this->resolveUser($request);
+            if ($user && $user->isTrial()) {
+                $catCount = MkatBarang::where('cperusahaan', $company)->count();
+                if ($catCount >= 3) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Batas masa Trial tercapai. Mode Trial hanya dapat membuat maksimal 3 Kategori Stok. Silakan lakukan verifikasi email owner.'
+                    ], 400);
+                }
+            }
+
             $category = MkatBarang::create([
                 'cnama'       => $request->cnama,
                 'cket'        => $request->cket,
@@ -329,6 +340,17 @@ class StockCategoryController extends Controller
                     'success' => false,
                     'message' => 'Kategori tidak ditemukan.'
                 ], 404);
+            }
+
+            $user = $this->resolveUser($request);
+            if ($user && $user->isTrial()) {
+                $itemCount = Mbarang::where('nid_kat', $nid_kat)->count();
+                if ($itemCount >= 3) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Batas masa Trial tercapai. Mode Trial hanya dapat membuat maksimal 3 Barang per kategori. Silakan lakukan verifikasi email owner.'
+                    ], 400);
+                }
             }
 
             DB::beginTransaction();

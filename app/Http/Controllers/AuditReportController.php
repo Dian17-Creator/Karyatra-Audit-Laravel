@@ -137,10 +137,25 @@ class AuditReportController extends Controller
     public function store(AuditCreateRequest $request)
     {
         try {
+            $user = $this->resolveUser($request);
+            if ($user) {
+                $check = $this->subscriptionService->canCreateAudit($user);
+                if (!$check['allowed']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $check['message']
+                    ], 400);
+                }
+            }
+
             // Priority: Request parameter > Auth ID > Default 1
             $auditorId = $request->auditor_id ?? (Auth::id() ?? 1);
 
             $audit = $this->auditService->startAudit($request->department_id, $auditorId);
+
+            if ($user) {
+                $this->subscriptionService->recordAuditCreated($user);
+            }
 
             return response()->json([
                 'success' => true,
@@ -403,6 +418,14 @@ class AuditReportController extends Controller
         ]);
 
         try {
+            $user = $this->resolveUser($request);
+            if ($user && !$this->subscriptionService->isPro($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fitur cetak / kirim laporan PDF via email hanya tersedia untuk pengguna paket Pro.'
+                ], 403);
+            }
+
             ini_set('memory_limit', '512M');
             set_time_limit(300);
 
