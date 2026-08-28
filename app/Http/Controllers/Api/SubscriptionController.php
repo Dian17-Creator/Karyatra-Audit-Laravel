@@ -151,8 +151,9 @@ class SubscriptionController extends Controller
                 $ownerFolder   = 'owner_' . $user->nid;
                 $subPath       = $companyFolder . '/' . $ownerFolder;
 
-                // Path fisik file di shared server via symlink uploads/ -> /var/www/shared/
-                $uploadDir = public_path('uploads/auditra/private/subscription-proofs/' . $subPath);
+                // Path fisik file di shared server (/var/www/shared/auditra/private/subscription-proofs/{company}/{owner})
+                // Symlink 'uploads' mengarah ke /var/www/shared/auditra/public/, jadi naik 1 level via '../private'
+                $uploadDir = public_path('uploads/../private/subscription-proofs/' . $subPath);
 
                 if (!File::isDirectory($uploadDir)) {
                     File::makeDirectory($uploadDir, 0775, true, true);
