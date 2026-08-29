@@ -29,6 +29,10 @@ class Muser extends Authenticatable
         'dverifyexpires',
         'ntrialauditcreated',
         'ntrialopnamecreated',
+        'dcompanynonactive',
+        'ddeletionrequested',
+        'ddeleteafter',
+        'fdeletionwasinactive',
     ];
 
     protected $hidden = [
@@ -37,15 +41,19 @@ class Muser extends Authenticatable
     ];
 
     protected $casts = [
-        'nid'                 => 'integer',
-        'niddept'             => 'integer',
-        'dcreated'            => 'datetime',
-        'fowner'              => 'boolean',
-        'dnonactive'          => 'date',
-        'demailverified'      => 'datetime',
-        'dverifyexpires'      => 'datetime',
-        'ntrialauditcreated'  => 'integer',
-        'ntrialopnamecreated' => 'integer',
+        'nid'                  => 'integer',
+        'niddept'              => 'integer',
+        'dcreated'             => 'datetime',
+        'fowner'               => 'boolean',
+        'dnonactive'           => 'date',
+        'demailverified'       => 'datetime',
+        'dverifyexpires'       => 'datetime',
+        'ntrialauditcreated'   => 'integer',
+        'ntrialopnamecreated'  => 'integer',
+        'dcompanynonactive'    => 'datetime',
+        'ddeletionrequested'   => 'datetime',
+        'ddeleteafter'         => 'datetime',
+        'fdeletionwasinactive' => 'boolean',
     ];
 
     public function getAuthPassword()
@@ -129,5 +137,43 @@ class Muser extends Authenticatable
     public function isTrial(): bool
     {
         return !$this->isEmailVerified();
+    }
+
+    public function getCompanyOwner(): ?Muser
+    {
+        if (empty($this->cperusahaan)) {
+            return null;
+        }
+
+        return static::where('cperusahaan', $this->cperusahaan)
+            ->where('fowner', 1)
+            ->first();
+    }
+
+    public function isCompanyInactive(): bool
+    {
+        $owner = $this->getCompanyOwner();
+        return $owner ? $owner->dcompanynonactive !== null : false;
+    }
+
+    public function isDeletionPending(): bool
+    {
+        $owner = $this->getCompanyOwner();
+        return $owner ? $owner->ddeletionrequested !== null : false;
+    }
+
+    public function getCompanyLifecycleState(): array
+    {
+        $owner = $this->getCompanyOwner();
+
+        return [
+            'is_owner'             => $this->isOwner(),
+            'is_company_inactive'  => $owner ? $owner->dcompanynonactive !== null : false,
+            'is_deletion_pending'  => $owner ? $owner->ddeletionrequested !== null : false,
+            'dcompanynonactive'    => $owner?->dcompanynonactive?->toIso8601String(),
+            'ddeletionrequested'   => $owner?->ddeletionrequested?->toIso8601String(),
+            'ddeleteafter'         => $owner?->ddeleteafter?->toIso8601String(),
+            'fdeletionwasinactive' => $owner ? (bool) $owner->fdeletionwasinactive : false,
+        ];
     }
 }

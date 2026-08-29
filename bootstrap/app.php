@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'company.lifecycle' => \App\Http\Middleware\EnforceCompanyLifecycle::class,
+        ]);
+        $middleware->appendToGroup('api', \App\Http\Middleware\EnforceCompanyLifecycle::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

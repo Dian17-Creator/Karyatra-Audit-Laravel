@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\CompanyLifecycleController;
 use App\Http\Controllers\Api\Internal\SubscriptionReviewController;
 use App\Http\Controllers\Api\Internal\SubscriptionPlanManageController;
 use App\Http\Controllers\AuditCategoryController;
@@ -21,6 +22,13 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
 Route::get('/me', [AuthController::class, 'me']);
+
+// Company Lifecycle API
+Route::prefix('company')->group(function () {
+    Route::get('/status', [CompanyLifecycleController::class, 'status']);
+    Route::post('/deactivate', [CompanyLifecycleController::class, 'deactivate']);
+    Route::post('/reactivate', [CompanyLifecycleController::class, 'reactivate']);
+});
 
 // User Profile & Settings API
 Route::prefix('user')->group(function () {
