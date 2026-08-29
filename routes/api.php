@@ -28,6 +28,8 @@ Route::prefix('company')->group(function () {
     Route::get('/status', [CompanyLifecycleController::class, 'status']);
     Route::post('/deactivate', [CompanyLifecycleController::class, 'deactivate']);
     Route::post('/reactivate', [CompanyLifecycleController::class, 'reactivate']);
+    Route::post('/delete-request', [CompanyLifecycleController::class, 'requestDeletion']);
+    Route::post('/cancel-deletion', [CompanyLifecycleController::class, 'cancelDeletion']);
 });
 
 // User Profile & Settings API
