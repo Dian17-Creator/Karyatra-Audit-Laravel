@@ -33,6 +33,8 @@ class Muser extends Authenticatable
         'ddeletionrequested',
         'ddeleteafter',
         'fdeletionwasinactive',
+        'ceulaversion',
+        'deulaaccepted',
     ];
 
     protected $hidden = [
@@ -54,6 +56,7 @@ class Muser extends Authenticatable
         'ddeletionrequested'   => 'datetime',
         'ddeleteafter'         => 'datetime',
         'fdeletionwasinactive' => 'boolean',
+        'deulaaccepted'        => 'datetime',
     ];
 
     public function getAuthPassword()

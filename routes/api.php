@@ -22,6 +22,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
 Route::get('/me', [AuthController::class, 'me']);
+Route::get('/legal/info', [AuthController::class, 'legalInfo']);
 
 // Company Lifecycle API
 Route::prefix('company')->group(function () {

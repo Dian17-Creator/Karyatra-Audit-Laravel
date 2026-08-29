@@ -101,26 +101,33 @@ class AuthController extends Controller
         $company = preg_replace('/\s+/', ' ', $company);
         $email = strtolower(trim($request->input('register_email') ?? $request->input('email') ?? ''));
         $password = $request->input('register_password') ?? $request->input('password') ?? '';
+        $eulaAccepted = $request->input('register_eula') ?? $request->input('eula_accepted') ?? $request->input('eula');
 
         $dataToValidate = [
-            'email'       => $email,
-            'namalengkap' => $fullName,
-            'perusahaan'  => $company,
-            'password'    => $password,
+            'email'         => $email,
+            'namalengkap'   => $fullName,
+            'perusahaan'    => $company,
+            'password'      => $password,
+            'register_eula' => $eulaAccepted,
         ];
 
+        $eulaUrl = config('auditra.eula_url', 'https://audit.karyatra.cloud/eula.php');
+
         $validator = Validator::make($dataToValidate, [
-            'email'        => 'required|email|max:255',
-            'namalengkap'  => 'required|string|max:100',
-            'perusahaan'   => 'required|string|max:200',
-            'password'     => 'required|string|min:8',
+            'email'         => 'required|email|max:255',
+            'namalengkap'   => 'required|string|max:100',
+            'perusahaan'    => 'required|string|max:200',
+            'password'      => 'required|string|min:8',
+            'register_eula' => 'required|accepted',
         ], [
-            'email.required'       => 'Email wajib diisi.',
-            'email.email'          => 'Format email tidak valid.',
-            'namalengkap.required' => 'Nama lengkap wajib diisi.',
-            'perusahaan.required'  => 'Nama perusahaan wajib diisi.',
-            'password.required'    => 'Password wajib diisi.',
-            'password.min'         => 'Password minimal 8 karakter.',
+            'email.required'         => 'Email wajib diisi.',
+            'email.email'            => 'Format email tidak valid.',
+            'namalengkap.required'   => 'Nama lengkap wajib diisi.',
+            'perusahaan.required'    => 'Nama perusahaan wajib diisi.',
+            'password.required'      => 'Password wajib diisi.',
+            'password.min'           => 'Password minimal 8 karakter.',
+            'register_eula.required' => "Anda harus menyetujui EULA Auditra ({$eulaUrl}) untuk membuat akun.",
+            'register_eula.accepted' => "Anda harus menyetujui EULA Auditra ({$eulaUrl}) untuk membuat akun.",
         ]);
 
         if ($validator->fails()) {
@@ -161,6 +168,8 @@ class AuthController extends Controller
             'demailverified'       => null,
             'ntrialauditcreated'   => 0,
             'ntrialopnamecreated'  => 0,
+            'ceulaversion'         => config('auditra.eula_version'),
+            'deulaaccepted'        => Carbon::now(),
         ]);
 
         // Issue verification token
@@ -389,6 +398,26 @@ class AuthController extends Controller
                     'hrd'   => strtolower(trim((string) $user->clevel)) === 'hrd',
                     'owner' => $user->isOwner(),
                 ]
+            ]
+        ]);
+    }
+
+    /**
+     * API Legal Meta Info Endpoint (EULA & Privacy Policy)
+     */
+    public function legalInfo()
+    {
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'eula' => [
+                    'version' => config('auditra.eula_version'),
+                    'url'     => config('auditra.eula_url'),
+                ],
+                'privacy_policy' => [
+                    'version' => config('auditra.privacy_policy_version'),
+                    'url'     => config('auditra.privacy_policy_url'),
+                ],
             ]
         ]);
     }
